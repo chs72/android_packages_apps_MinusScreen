@@ -1,5 +1,7 @@
 package com.okcaros.minusscreen;
 
+import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -15,9 +17,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.animation.Animation;
-import android.view.animation.TranslateAnimation;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
@@ -25,107 +26,158 @@ import com.google.android.libraries.launcherclient.ILauncherOverlay;
 import com.google.android.libraries.launcherclient.ILauncherOverlayCallback;
 
 public class MinusScreenService extends Service {
-    // 负一屏
-    WindowManager.LayoutParams mLayoutParams;
-    WindowManager mWindowManager;
-    View layoutView;
+    static WindowManager.LayoutParams mLayoutParams;
+    static WindowManager mWindowManager;
+    static MinusScreenController minusScreenController;
     Handler messageHandler = new Handler();
-    ILauncherOverlayCallback callback;
-    int screenW;
-    float viewOffsetProgress;
-
-    private float startLayoutX;
-    private float startX;
-    private float currentX;
-    private float offset;
-    private float minSwipeRatio = 0.4F;
-    private float minSwipeSpeed = 0.5F;
+    static ILauncherOverlayCallback callback;
+    private static long startTime;
+    private static float startLayoutX;
+    private static float startX;
+    private static float currentX;
+    private static float offset;
+    static int screenW;
+    static float viewOffsetProgress;
+    private static float minSwipeRatio = 0.4F;
+    private static float minSwipeSpeed = 0.5F;
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        layoutView = View.inflate(getBaseContext(), R.layout.main_activity, null);
-        layoutView.setOnTouchListener(new View.OnTouchListener() {
-            private long startTime;
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        // 用户按下屏幕的动作
-                        startTime = System.currentTimeMillis();
-                        startX = event.getRawX();
-                        startLayoutX = mLayoutParams.x;
-                        Log.e("oklauncher", "start x" + startX);
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        // 用户在屏幕上移动的动作
-                        Log.e("oklauncher", event.getRawX() + "current x");
-                        currentX = event.getRawX();
-
-                        offset = currentX - startX;
-                        Log.e("oklauncher", offset + "offset");
-
-                        if (offset < 0) {
-                            mLayoutParams.x = (int) (startLayoutX + offset);
-                            viewOffsetProgress = 1 - offset / screenW;
-
-                            mWindowManager.updateViewLayout(layoutView, mLayoutParams);
-
-                            try {
-                                callback.overlayScrollChanged(viewOffsetProgress);
-                            } catch (RemoteException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                        break;
-                    case MotionEvent.ACTION_UP:
-                        float speed = offset / (System.currentTimeMillis() - startTime);
-                        Log.e("oklauncher", "end scroll" + speed);
-                        float x = mLayoutParams.x;
-                        if (speed < -minSwipeSpeed) {
-                            mLayoutParams.x = -screenW;
-                            viewOffsetProgress = 0;
-                        } else {
-                            // finish move
-                            if (offset  < -screenW * minSwipeRatio) {
-                                mLayoutParams.x = -screenW;
-                                viewOffsetProgress = 0;
-                            } else {
-                                mLayoutParams.x = 0;
-                                viewOffsetProgress = 1;
-                            }
-                        }
-
-                        Animation animation = new TranslateAnimation(x, mLayoutParams.x, 0, 0);
-                        animation.setDuration(5000);
-                        layoutView.startAnimation(animation);
-                        mWindowManager.updateViewLayout(layoutView, mLayoutParams);
-                        try {
-                            callback.overlayScrollChanged(viewOffsetProgress);
-                        } catch (RemoteException e) {
-                            throw new RuntimeException(e);
-                        }
-                        break;
-                }
-
-                return true; // 返回 true 表示已处理该触摸事件，false 表示未处理
-            }
-        });
+        initEvent();
     }
 
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        Log.e("oklauncher", "service call");
-
-        init();
+        mWindowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
 
         return stub;
     }
 
-    private void init() {
-        mWindowManager = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+    public void initView(Bundle bundle) {
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        screenW = dm.widthPixels;
+
+        WindowManager.LayoutParams lp = bundle.getParcelable("layout_params");
+
+        mLayoutParams = new WindowManager.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
+
+        mLayoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        mLayoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
+        mLayoutParams.gravity = Gravity.START;
+
+        // ensure minus screen's index large than Launcher
+        mLayoutParams.type = lp.type + 1;
+
+        mLayoutParams.token = lp.token;
+        mLayoutParams.flags = WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS |
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS |
+                WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
+        mLayoutParams.x = -screenW;
+        mLayoutParams.format = PixelFormat.TRANSLUCENT;
+
+        messageHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mWindowManager.addView(minusScreenController, mLayoutParams);
+
+                if (minusScreenController != null) {
+                    minusScreenController.setLayoutParams(mLayoutParams);
+                }
+            }
+        });
+    }
+
+    public static boolean  onTouch(MotionEvent event) {
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                Log.e("oklauncher", "??????");
+                startTime = System.currentTimeMillis();
+                startX = event.getRawX();
+                startLayoutX = mLayoutParams.x;
+                break;
+            case MotionEvent.ACTION_MOVE:
+                currentX = event.getRawX();
+
+                offset = currentX - startX;
+
+                if (offset < 0) {
+                    mLayoutParams.x = (int) (startLayoutX + offset);
+                    viewOffsetProgress = 1 + offset / screenW;
+
+                    mWindowManager.updateViewLayout(minusScreenController, mLayoutParams);
+
+                    try {
+                        callback.overlayScrollChanged(viewOffsetProgress);
+                    } catch (RemoteException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                break;
+            case MotionEvent.ACTION_UP:
+                offset = event.getRawX() - startX;
+                float speed = offset / (System.currentTimeMillis() - startTime);
+
+                float startX = mLayoutParams.x;
+                float endX = -screenW;
+                float startProgress = viewOffsetProgress;
+                float endProgress = 0;
+
+                if (speed >= -minSwipeSpeed && offset >= -screenW * minSwipeRatio) {
+                    endX = 0;
+                    endProgress = 1;
+                }
+
+                updateViewWithAnim(startX, endX, startProgress, endProgress);
+                break;
+        }
+
+        return false;
+    };
+
+    public static void updateViewWithAnim(float startX, float endX, float startProgress, float endProgress) {
+        ValueAnimator animMinusScreen = ValueAnimator.ofFloat(startX, endX);
+        animMinusScreen.setDuration(200);
+        animMinusScreen.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(@NonNull ValueAnimator animation) {
+                float moveX = (float) animation.getAnimatedValue();
+                mLayoutParams.x = (int) moveX;
+                mWindowManager.updateViewLayout(minusScreenController, mLayoutParams);
+            }
+        });
+        animMinusScreen.start();
+        
+        ValueAnimator animLauncher = ValueAnimator.ofFloat(startProgress, endProgress);
+        animLauncher.setDuration(200);
+        animLauncher.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(@NonNull ValueAnimator animation) {
+                float moveProgress = (float) animation.getAnimatedValue();
+                viewOffsetProgress = moveProgress;
+                try {
+                    callback.overlayScrollChanged(viewOffsetProgress);
+                } catch (RemoteException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        animLauncher.start();
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    public void initEvent() {
+        minusScreenController = new MinusScreenController(this);
+        minusScreenController.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return MinusScreenService.this.onTouch(event);
+            }
+        });
     }
 
     ILauncherOverlay.Stub stub = new ILauncherOverlay.Stub() {
@@ -144,8 +196,7 @@ public class MinusScreenService extends Service {
                 public void run() {
                     viewOffsetProgress = progress;
                     mLayoutParams.x = (int) (-screenW * (1 - progress));
-                    mWindowManager.updateViewLayout(layoutView, mLayoutParams);
-
+                    mWindowManager.updateViewLayout(minusScreenController, mLayoutParams);
                     try {
                         callback.overlayScrollChanged(progress);
                     } catch (RemoteException e) {
@@ -164,27 +215,19 @@ public class MinusScreenService extends Service {
                     long currentTime = System.currentTimeMillis();
                     float speed = screenW * viewOffsetProgress / (currentTime - startTime);
 
-                    Log.e("oklauncher", speed + "速度" + currentTime + "currentTime" + startTime + "startTime" + viewOffsetProgress + "progress");
-                    if (speed > minSwipeSpeed) {
-                        mLayoutParams.x = 0;
-                        viewOffsetProgress = 1;
+                    float startX = mLayoutParams.x;
+                    float endX = 0;
+                    float startProgress = viewOffsetProgress;
+                    float endProgress;
+
+                    if (speed <= minSwipeSpeed && viewOffsetProgress <= minSwipeRatio) {
+                        endX = -screenW;
+                        endProgress = 0;
                     } else {
-                        if (viewOffsetProgress > minSwipeRatio) {
-                            mLayoutParams.x = 0;
-                            viewOffsetProgress = 1;
-                        } else {
-                            mLayoutParams.x = -screenW;
-                            viewOffsetProgress = 0;
-                        }
+                        endProgress = 1;
                     }
 
-                    mWindowManager.updateViewLayout(layoutView, mLayoutParams);
-                    try {
-                        callback.overlayScrollChanged(viewOffsetProgress);
-                    } catch (RemoteException e) {
-                        throw new RuntimeException(e);
-                    }
-                    Log.e("oklauncher end scroll", mLayoutParams.x + "---------" + viewOffsetProgress);
+                    updateViewWithAnim(startX, endX, startProgress, endProgress);
                 }
             });
 
@@ -192,7 +235,7 @@ public class MinusScreenService extends Service {
 
         @Override
         public void windowAttached(WindowManager.LayoutParams lp, ILauncherOverlayCallback cb, int flags) throws RemoteException {
-            Log.e("oklauncher", lp.packageName);
+
         }
 
         @Override
@@ -217,7 +260,7 @@ public class MinusScreenService extends Service {
 
         @Override
         public void openOverlay(int flags) throws RemoteException {
-            Log.e("oklauncher", "open overlay");
+
         }
 
         @Override
@@ -242,37 +285,7 @@ public class MinusScreenService extends Service {
 
         @Override
         public void windowAttached2(Bundle bundle, ILauncherOverlayCallback cb) throws RemoteException {
-            Log.e("oklauncher", "windowAttached2");
-
-            DisplayMetrics dm = getResources().getDisplayMetrics();
-            screenW = dm.widthPixels;
-
-            WindowManager.LayoutParams lp = bundle.getParcelable("layout_params");
-
-            mLayoutParams = new WindowManager.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
-            mLayoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            mLayoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
-            mLayoutParams.gravity = Gravity.START;
-            // 负一屏的 Window 层级比 Launcher 的大就可以
-            mLayoutParams.type = lp.type + 1;
-
-            Log.e("oklauncher", lp.type + "-----" + lp.token);
-            mLayoutParams.token = lp.token;
-            mLayoutParams.flags = WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS |
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS |
-                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
-            mLayoutParams.x = -screenW;
-            mLayoutParams.format = PixelFormat.TRANSLUCENT;
-
-            messageHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    mWindowManager.addView(layoutView, mLayoutParams);
-                }
-            });
-
+            initView(bundle);
 
             if (cb != null) {
                 callback = cb;

@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">minusscreen</string>
+    <string name="navigation">導航</string>
+    <string name="music">音樂</string>
+    <string name="weather">天氣</string>
+    <string name="unknown_music">未知音樂</string>
+    <string name="unknown_singer">未知歌手</string>
+    <string name="select_app">請選擇一個應用</string>
+</resources>

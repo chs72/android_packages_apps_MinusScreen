@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">minusscreen</string>
+    <string name="navigation">导航</string>
+    <string name="music">音乐</string>
+    <string name="weather">天气</string>
+    <string name="unknown_music">未知音乐</string>
+    <string name="unknown_singer">未知歌手</string>
+    <string name="select_app">请选择一个应用</string>
+    <string name="cancel">取消</string>
+</resources>
