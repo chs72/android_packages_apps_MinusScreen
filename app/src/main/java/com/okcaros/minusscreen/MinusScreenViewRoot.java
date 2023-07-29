@@ -1,16 +1,13 @@
 package com.okcaros.minusscreen;
 
 import android.content.Context;
-import android.graphics.PixelFormat;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -23,52 +20,39 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MinusScreenController extends ConstraintLayout {
+public class MinusScreenViewRoot extends ConstraintLayout {
     public static final int TYPE_MAP = 1;
     public static final int TYPE_MUSIC = 2;
     public static final int TYPE_WEATHER = 3;
-    float screenW;
-    float screenH;
     float screenRatio;
-    float verticalScreenRatio = 0.5f;
-    float wideScreenRatio = 2.5f;
     int activeAppPosition = 0;
-
-    private RecyclerView appMenuRcv;
-    private AppMenuAdapter adapter;
-
-    static WindowManager.LayoutParams mLayoutParams;
-    static WindowManager mWindowManager;
-    WindowManager.LayoutParams minusScreenLayoutParams;
-
-    public MinusScreenController(@NonNull Context context) {
+    private MinusScreenService.MinusScreenAgentCallback callback;
+    public MinusScreenViewRoot(@NonNull Context context) {
         super(context);
 
         init();
     }
 
-    public MinusScreenController(@NonNull Context context, @Nullable AttributeSet attrs) {
+    public MinusScreenViewRoot(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         init();
     }
 
-    public MinusScreenController(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+    public MinusScreenViewRoot(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
     }
 
-    public MinusScreenController(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public MinusScreenViewRoot(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
         init();
     }
 
-    public void setLayoutParams(WindowManager.LayoutParams layoutParams) {
-        minusScreenLayoutParams = layoutParams;
-        mWindowManager = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-    }
-
     private void init() {
-        getScreenInfo();
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        int screenW = dm.widthPixels;
+        int screenH = dm.heightPixels;
+        screenRatio = (float) screenW / screenH;
 
         if (isVerticalScreen()) {
             inflate(getContext(), R.layout.minus_screen_vertical, this);
@@ -76,9 +60,9 @@ public class MinusScreenController extends ConstraintLayout {
             inflate(getContext(), R.layout.minus_screen, this);
         }
 
-        int dimension8 = (int) getResources().getDimension(R.dimen.dp_8);
+        int dimension8 = (int) getResources().getDimensionPixelSize(R.dimen.dp_8);
 
-        appMenuRcv = findViewById(R.id.app_menu_rcv);
+        RecyclerView appMenuRcv = findViewById(R.id.app_menu_rcv);
         appMenuRcv.setPadding(dimension8, getStatusBarHeight(), dimension8, dimension8);
         findViewById(R.id.app_content).setPadding(0, getStatusBarHeight(), dimension8, dimension8);
 
@@ -96,71 +80,49 @@ public class MinusScreenController extends ConstraintLayout {
             dataList.add(new MenuAppEntity(TYPE_WEATHER));
         }
 
-        adapter = new AppMenuAdapter(dataList);
+        AppMenuAdapter adapter = new AppMenuAdapter(dataList);
         appMenuRcv.setAdapter(adapter);
 
         appMenuRcv.setLayoutManager(new LinearLayoutManager(getContext(), isVerticalScreen() ? LinearLayoutManager.HORIZONTAL : LinearLayoutManager.VERTICAL, false));
 
-        appMenuRcv.setOnTouchListener(new OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                return MinusScreenService.onTouch(event);
+        appMenuRcv.setOnTouchListener((v, event) -> {
+            if (callback == null) {
+                return false;
             }
+            return callback.onTouch(event);
         });
 
         findViewById(R.id.app_content).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                showAppSelect();
+                if (callback == null) {
+                    return;
+                }
+                callback.showAppSelect(activeAppPosition);
             }
         });
     }
 
-    private void showAppSelect() {
-        DisplayMetrics dm = getResources().getDisplayMetrics();
-        screenW = dm.widthPixels;
-
-        mLayoutParams = new WindowManager.LayoutParams();
-
-        mLayoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
-        mLayoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
-        mLayoutParams.gravity = Gravity.CENTER;
-
-        mLayoutParams.type = minusScreenLayoutParams.type + 2;
-        mLayoutParams.token = minusScreenLayoutParams.token;
-
-        mLayoutParams.flags = WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS |
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS |
-                WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
-        mLayoutParams.format = PixelFormat.TRANSLUCENT;
-
-        AppSelectController appSelectController = new AppSelectController(getContext(), activeAppPosition);
-        mWindowManager.addView(appSelectController, mLayoutParams);
-    }
-
-    private void getScreenInfo() {
-        DisplayMetrics dm = getResources().getDisplayMetrics();
-        screenW = dm.widthPixels;
-        screenH = dm.heightPixels;
-        screenRatio = screenW / screenH;
+    public void setCallback(MinusScreenService.MinusScreenAgentCallback callback) {
+        this.callback = callback;
     }
 
     private int getStatusBarHeight() {
         int height = 0;
         int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
         if (resourceId > 0) {
-            height = (int) (getResources().getDimensionPixelSize(resourceId) + getResources().getDimension(R.dimen.dp_4));
+            height = (int) (getResources().getDimensionPixelSize(resourceId) + getResources().getDimensionPixelSize(R.dimen.dp_4));
         }
         return height;
     }
 
     private boolean isVerticalScreen() {
+        float verticalScreenRatio = 0.5f;
         return screenRatio <= verticalScreenRatio;
     }
 
     private boolean isWideScreen() {
+        float wideScreenRatio = 2.5f;
         return screenRatio >= wideScreenRatio;
     }
 
@@ -214,7 +176,7 @@ public class MinusScreenController extends ConstraintLayout {
                 MusicViewHolder musicViewHolder = (MusicViewHolder) holder;
                 musicViewHolder.musicName.setText(getResources().getText(R.string.unknown_music));
                 musicViewHolder.musicAuthor.setText(getResources().getText(R.string.unknown_singer));
-            } else if (holder instanceof  WeatherViewHolder) {
+            } else if (holder instanceof WeatherViewHolder) {
                 WeatherViewHolder weatherViewHolder = (WeatherViewHolder) holder;
 
                 weatherViewHolder.temperature.setText("30°");
@@ -249,26 +211,24 @@ public class MinusScreenController extends ConstraintLayout {
                 int parentHeight = parent.getMeasuredHeight();
 
                 if (isVerticalScreen()) {
-                    int itemWidth = (int) ((parent.getMeasuredWidth() - 2 * getResources().getDimension(R.dimen.dp_8)) / 2);
-                    itemView.getLayoutParams().width = itemWidth;
+                    itemView.getLayoutParams().width = (int) ((parent.getMeasuredWidth() - 2 * getResources().getDimensionPixelSize(R.dimen.dp_8)) / 2);
                     return;
                 }
 
                 if (isWideScreen()) {
-                    int itemHeight = (int) ((parentHeight - 2 * getResources().getDimension(R.dimen.dp_8) - getStatusBarHeight()) / 2);
-                    itemView.getLayoutParams().height = itemHeight;
+                    itemView.getLayoutParams().height = (int) ((parentHeight - 2 * getResources().getDimensionPixelSize(R.dimen.dp_8) - getStatusBarHeight()) / 2);
                     return;
                 }
 
                 // normal screen
-                int itemHeight = (int) ((parentHeight - 3 * getResources().getDimension(R.dimen.dp_8) - getStatusBarHeight()) / 3);
-                itemView.getLayoutParams().height = itemHeight;
+                itemView.getLayoutParams().height = (int) ((parentHeight - 3 * getResources().getDimensionPixelSize(R.dimen.dp_8) - getStatusBarHeight()) / 3);
             }
         }
 
         public class MapViewHolder extends BaseViewHolder {
             ImageView mapHome;
             ImageView mapCompany;
+
             public MapViewHolder(@NonNull View itemView, @NonNull ViewGroup parent) {
                 super(itemView, parent);
 
@@ -304,6 +264,7 @@ public class MinusScreenController extends ConstraintLayout {
         public class MusicViewHolder extends BaseViewHolder {
             TextView musicName;
             TextView musicAuthor;
+
             public MusicViewHolder(@NonNull View itemView, @NonNull ViewGroup parent) {
                 super(itemView, parent);
 
@@ -317,6 +278,7 @@ public class MinusScreenController extends ConstraintLayout {
             TextView temperature;
             TextView weatherDetail;
             TextView location;
+
             public WeatherViewHolder(@NonNull View itemView, @NonNull ViewGroup parent) {
                 super(itemView, parent);
 
@@ -328,10 +290,11 @@ public class MinusScreenController extends ConstraintLayout {
         }
     }
 
-    public class MenuAppEntity {
+    public static class MenuAppEntity {
         public MenuAppEntity(int type) {
             this.type = type;
         }
+
         private int type;
 
         public int getType() {
