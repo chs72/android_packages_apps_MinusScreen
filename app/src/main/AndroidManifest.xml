@@ -12,6 +12,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Minusscreen"
         tools:targetApi="31">
+        <activity
+            android:name=".setting.SettingsActivity"
+            android:exported="true"
+            android:label="@string/title_activity_settings" />
 
         <activity
             android:name=".MainActivity"
@@ -24,7 +28,7 @@
         </activity>
 
         <service
-            android:name="MinusScreenService"
+            android:name=".MinusScreenService"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
@@ -37,7 +41,6 @@
                 android:name="service.api.version"
                 android:value="7" />
         </service>
-
     </application>
 
 </manifest>

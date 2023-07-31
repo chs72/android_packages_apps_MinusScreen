@@ -7,4 +7,10 @@
     <string name="unknown_singer">未知歌手</string>
     <string name="select_app">请选择一个应用</string>
     <string name="cancel">取消</string>
+
+    <string name="title_activity_settings">负一屏设置</string>
+    <string name="freeformApp">控件设置</string>
+    <string name="freeformAppSummary">点击左侧小控件时，右侧显示的APP</string>
+    <string name="freeformAppMap">地图控件</string>
+    <string name="freeformAppMusic">音乐控件</string>
 </resources>

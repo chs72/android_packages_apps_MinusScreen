@@ -8,4 +8,10 @@
     <string name="unknown_singer">Unknown Singer</string>
     <string name="select_app">Please select an application</string>
     <string name="cancel">Cancel</string>
+
+    <string name="title_activity_settings">SmartSpace Settings</string>
+    <string name="freeformApp">Widget Settings</string>
+    <string name="freeformAppSummary">The app displayed on the right when clicking on the small widget on the left.</string>
+    <string name="freeformAppMap">Map Widget</string>
+    <string name="freeformAppMusic">Music Widget</string>
 </resources>

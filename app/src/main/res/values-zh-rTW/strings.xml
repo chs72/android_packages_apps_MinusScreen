@@ -6,4 +6,10 @@
     <string name="unknown_music">未知音樂</string>
     <string name="unknown_singer">未知歌手</string>
     <string name="select_app">請選擇一個應用</string>
+
+    <string name="title_activity_settings">負一屏設置</string>
+    <string name="freeformApp">控件設置</string>
+    <string name="freeformAppSummary">點擊左側小控件時，右側顯示的應用程式</string>
+    <string name="freeformAppMap">地圖控件</string>
+    <string name="freeformAppMusic">音樂控件</string>
 </resources>

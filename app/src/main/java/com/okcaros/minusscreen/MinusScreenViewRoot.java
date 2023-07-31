@@ -1,6 +1,5 @@
 package com.okcaros.minusscreen;
 
-import static androidx.core.content.ContextCompat.getSystemService;
 import static com.okcaros.minusscreen.MinusScreenService.getScreenHeight;
 import static com.okcaros.minusscreen.MinusScreenService.getScreenWidth;
 import static com.okcaros.minusscreen.MinusScreenService.getStatusBarHeight;
@@ -9,7 +8,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -24,6 +22,8 @@ import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.okcaros.minusscreen.setting.SettingsActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -118,13 +118,14 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             return callback.onTouch(event);
         });
 
-        findViewById(R.id.app_content).setOnClickListener(new OnClickListener() {
+
+        findViewById(R.id.config_btn).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (callback == null) {
                     return;
                 }
-                callback.showAppSelect(activeAppPosition);
+                callback.configApp(activeAppPosition);
             }
         });
     }
@@ -287,6 +288,15 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 temperature = itemView.findViewById(R.id.weather_temperature);
                 weatherDetail = itemView.findViewById(R.id.weather_detail);
                 location = itemView.findViewById(R.id.weather_location);
+
+                weatherIcon.setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent i = new Intent(v.getContext(), SettingsActivity.class);
+                        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        v.getContext().startActivity(i);
+                    }
+                });
             }
         }
     }

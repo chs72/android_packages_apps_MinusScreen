@@ -8,7 +8,6 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
-import android.graphics.Insets;
 import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Bundle;
@@ -22,7 +21,6 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.view.WindowMetrics;
 
@@ -32,8 +30,8 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.google.android.libraries.launcherclient.ILauncherOverlay;
 import com.google.android.libraries.launcherclient.ILauncherOverlayCallback;
+import com.okcaros.minusscreen.setting.SettingsActivity;
 
-import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MinusScreenService extends Service {
@@ -44,7 +42,6 @@ public class MinusScreenService extends Service {
     private final static int MsgOnWindowsAttached = 3;
     private final static int MsgOnWindowsDetach = 4;
     WindowManager mWindowManager;
-
     private int parentWindowType = 0;
     private IBinder parentWindowToken = null;
 
@@ -73,26 +70,10 @@ public class MinusScreenService extends Service {
             }
 
             @Override
-            public void showAppSelect(int appType) {
-                // ToDo 实现APP选择
-//                WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
-//
-//                lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-//                lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-//                lp.gravity = Gravity.CENTER;
-//
-//                lp.type = mLayoutParams.type + 2;
-//                lp.token = mLayoutParams.token;
-//
-//                lp.flags = WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS |
-//                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-//                        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-//                        WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS |
-//                        WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
-//                lp.format = PixelFormat.TRANSLUCENT;
-//
-//                AppSelectController appSelectController = new AppSelectController(MinusScreenService.this, appType);
-//                mWindowManager.addView(appSelectController, lp);
+            public void configApp(int appType) {
+                Intent intent = new Intent(MinusScreenService.this, SettingsActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
             }
         });
         minusScreenViewRoot.setOnTouchListener(new View.OnTouchListener() {
@@ -202,7 +183,7 @@ public class MinusScreenService extends Service {
     public interface MinusScreenAgentCallback {
         boolean onTouch(MotionEvent event);
 
-        void showAppSelect(int appType);
+        void configApp(int appType);
     }
 
     @Override
@@ -383,6 +364,7 @@ public class MinusScreenService extends Service {
             message.obj = bundle;
             messageHandler.sendMessage(message);
         }
+
         @Override
         public void unusedMethod() throws RemoteException {
 
