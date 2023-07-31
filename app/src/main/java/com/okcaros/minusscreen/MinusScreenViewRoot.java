@@ -1,6 +1,13 @@
 package com.okcaros.minusscreen;
 
+import static androidx.core.content.ContextCompat.getSystemService;
+import static com.okcaros.minusscreen.MinusScreenService.getScreenHeight;
+import static com.okcaros.minusscreen.MinusScreenService.getScreenWidth;
+import static com.okcaros.minusscreen.MinusScreenService.getStatusBarHeight;
+
+import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -8,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -21,12 +29,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MinusScreenViewRoot extends ConstraintLayout {
+    private final static String Tag = "MinusScreenViewRoot";
     public static final int TYPE_MAP = 1;
     public static final int TYPE_MUSIC = 2;
     public static final int TYPE_WEATHER = 3;
     float screenRatio;
     int activeAppPosition = 0;
+    private String activePackageName = null;
     private MinusScreenService.MinusScreenAgentCallback callback;
+
     public MinusScreenViewRoot(@NonNull Context context) {
         super(context);
 
@@ -49,9 +60,9 @@ public class MinusScreenViewRoot extends ConstraintLayout {
     }
 
     private void init() {
-        DisplayMetrics dm = getResources().getDisplayMetrics();
-        int screenW = dm.widthPixels;
-        int screenH = dm.heightPixels;
+        WindowManager windowManager = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
+        int screenW = getScreenWidth(windowManager);
+        int screenH = getScreenHeight(windowManager);
         screenRatio = (float) screenW / screenH;
 
         if (isVerticalScreen()) {
@@ -62,14 +73,29 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
         int dimension8 = (int) getResources().getDimensionPixelSize(R.dimen.dp_8);
 
+        View viewRoot = findViewById(R.id.minus_screen_container);
+        viewRoot.setPadding(MinusScreenService.getNavBarWidth(getContext()), 0, 0, 0);
+
         RecyclerView appMenuRcv = findViewById(R.id.app_menu_rcv);
-        appMenuRcv.setPadding(dimension8, getStatusBarHeight(), dimension8, dimension8);
-        findViewById(R.id.app_content).setPadding(0, getStatusBarHeight(), dimension8, dimension8);
+        appMenuRcv.setPadding(dimension8, getStatusBarHeight(getContext()), dimension8, dimension8);
+
+        View appContent = findViewById(R.id.app_content);
+        ConstraintLayout.LayoutParams appContentLp = (ConstraintLayout.LayoutParams) appContent.getLayoutParams();
 
         if (isVerticalScreen()) {
-            findViewById(R.id.app_content).setPadding(dimension8, getStatusBarHeight(), dimension8, dimension8);
+            appContentLp.leftMargin = dimension8;
+            appContentLp.topMargin = getStatusBarHeight(getContext());
+            appContentLp.rightMargin = dimension8;
+            appContentLp.bottomMargin = dimension8;
             appMenuRcv.setPadding(dimension8, 0, dimension8, dimension8);
+        } else {
+            appContentLp.leftMargin = 0;
+            appContentLp.topMargin = getStatusBarHeight(getContext());
+            appContentLp.rightMargin = dimension8;
+            appContentLp.bottomMargin = dimension8;
         }
+
+        appContent.setLayoutParams(appContentLp);
 
         List<MenuAppEntity> dataList = new ArrayList<>();
 
@@ -105,15 +131,6 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
     public void setCallback(MinusScreenService.MinusScreenAgentCallback callback) {
         this.callback = callback;
-    }
-
-    private int getStatusBarHeight() {
-        int height = 0;
-        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            height = (int) (getResources().getDimensionPixelSize(resourceId) + getResources().getDimensionPixelSize(R.dimen.dp_4));
-        }
-        return height;
     }
 
     private boolean isVerticalScreen() {
@@ -216,46 +233,23 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 }
 
                 if (isWideScreen()) {
-                    itemView.getLayoutParams().height = (int) ((parentHeight - 2 * getResources().getDimensionPixelSize(R.dimen.dp_8) - getStatusBarHeight()) / 2);
+                    itemView.getLayoutParams().height = (int) ((parentHeight - 2 * getResources().getDimensionPixelSize(R.dimen.dp_8) - getStatusBarHeight(getContext())) / 2);
                     return;
                 }
 
                 // normal screen
-                itemView.getLayoutParams().height = (int) ((parentHeight - 3 * getResources().getDimensionPixelSize(R.dimen.dp_8) - getStatusBarHeight()) / 3);
+                itemView.getLayoutParams().height = (int) ((parentHeight - 3 * getResources().getDimensionPixelSize(R.dimen.dp_8) - getStatusBarHeight(getContext())) / 3);
             }
         }
 
         public class MapViewHolder extends BaseViewHolder {
-            ImageView mapHome;
-            ImageView mapCompany;
-
+            @SuppressLint("ClickableViewAccessibility")
             public MapViewHolder(@NonNull View itemView, @NonNull ViewGroup parent) {
                 super(itemView, parent);
-
-                mapHome = itemView.findViewById(R.id.map_home);
-                mapCompany = itemView.findViewById(R.id.map_company);
-
-                itemView.setOnTouchListener(new OnTouchListener() {
+                itemView.findViewById(R.id.nav_icon).setOnClickListener(new OnClickListener() {
                     @Override
-                    public boolean onTouch(View v, MotionEvent event) {
-                        Log.e("oklauncher", "什么情况？？？？？？");
-                        return false;
-                    }
-                });
-
-                mapHome.setOnTouchListener(new OnTouchListener() {
-                    @Override
-                    public boolean onTouch(View v, MotionEvent event) {
-                        Log.e("oklauncher", "dianjidianjidianjidianji");
-                        return true;
-                    }
-                });
-
-                mapCompany.setOnTouchListener(new OnTouchListener() {
-                    @Override
-                    public boolean onTouch(View v, MotionEvent event) {
-                        Log.e("oklauncher", "llllllllllllllllllllll");
-                        return true;
+                    public void onClick(View v) {
+                        appAndEnterFreeForm("com.autonavi.amapauto");
                     }
                 });
             }
@@ -270,6 +264,13 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
                 musicName = itemView.findViewById(R.id.music_name);
                 musicAuthor = itemView.findViewById(R.id.music_author);
+
+                itemView.findViewById(R.id.music_thumb_icon).setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        appAndEnterFreeForm("com.netease.cloudmusic");
+                    }
+                });
             }
         }
 
@@ -303,6 +304,39 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
         public void setType(int type) {
             this.type = type;
+        }
+    }
+
+    private void appAndEnterFreeForm(String packageName) {
+        activePackageName = packageName;
+
+        int[] location = new int[2];
+        View appContentView = findViewById(R.id.app_content);
+        appContentView.getLocationInWindow(location);
+
+        findViewById(R.id.empty_bg).setVisibility(INVISIBLE);
+
+        int left = location[0];
+        int top = location[1];
+        int right = left + appContentView.getMeasuredWidth();
+        int bottom = top + appContentView.getMeasuredHeight();
+
+        // Log.d(Tag, String.format("left:%d top:%d right:%d bottom:%d", left, top, right, bottom));
+        Intent intent = new Intent("pc.intent.action.FREEFORM_CONTROL");
+        intent.putExtra("enter", true);
+        intent.putExtra("packageName", packageName);
+        intent.putExtra("left", left);
+        intent.putExtra("top", top);
+        intent.putExtra("right", right);
+        intent.putExtra("bottom", bottom);
+
+        getContext().sendBroadcast(intent);
+    }
+
+
+    public void onResume() {
+        if (activePackageName != null && !activePackageName.equals("")) {
+            appAndEnterFreeForm(activePackageName);
         }
     }
 }

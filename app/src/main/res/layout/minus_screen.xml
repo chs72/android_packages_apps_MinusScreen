@@ -2,31 +2,32 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
     android:id="@+id/minus_screen_container"
-    android:background="@mipmap/bg_screen">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/app_menu_rcv"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
         android:maxWidth="@dimen/dp_186"
-        app:layout_constraintWidth_percent="0.3"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"/>
+        app:layout_constraintWidth_percent="0.3" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/app_content"
         android:layout_width="0dp"
         android:layout_height="match_parent"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintLeft_toRightOf="@id/app_menu_rcv"
-        app:layout_constraintRight_toRightOf="parent">
-        <ImageView
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:id="@+id/empty_bg"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@drawable/empty_app_display_bg"/>
+            android:background="#90000000" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

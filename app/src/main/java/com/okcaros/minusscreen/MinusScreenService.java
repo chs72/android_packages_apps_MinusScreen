@@ -7,7 +7,10 @@ import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.Insets;
 import android.graphics.PixelFormat;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -19,7 +22,9 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.view.WindowManager;
+import android.view.WindowMetrics;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,6 +33,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import com.google.android.libraries.launcherclient.ILauncherOverlay;
 import com.google.android.libraries.launcherclient.ILauncherOverlayCallback;
 
+import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MinusScreenService extends Service {
@@ -36,17 +42,94 @@ public class MinusScreenService extends Service {
     private final static int MsgOnScroll = 1;
     private final static int MsgOnScrollEnd = 2;
     private final static int MsgOnWindowsAttached = 3;
-
     private final static int MsgOnWindowsDetach = 4;
     WindowManager mWindowManager;
+
+    private int parentWindowType = 0;
+    private IBinder parentWindowToken = null;
+
     private WindowManager.LayoutParams mRootContainerLp;
     private MinusScreenViewRoot minusScreenViewRoot;
     private final Handler messageHandler;
     ILauncherOverlayCallback launcherOverlayCallback;
     private float motionEventDownRawX;
+    private boolean motionEventDownTriggerHome;
     private int screenW;
     private float overlayScrollValue;
     private final AtomicBoolean animating = new AtomicBoolean(false);
+
+    private void addMinusScreenView() {
+        if (parentWindowToken == null) {
+            Log.e(Tag, "addMinusScreenView failed, parentWindowToken is NULL");
+            return;
+        }
+        screenW = getScreenWidth(mWindowManager);
+
+        minusScreenViewRoot = new MinusScreenViewRoot(this);
+        minusScreenViewRoot.setCallback(new MinusScreenAgentCallback() {
+            @Override
+            public boolean onTouch(MotionEvent event) {
+                return MinusScreenService.this.onTouch(event);
+            }
+
+            @Override
+            public void showAppSelect(int appType) {
+                // ToDo 实现APP选择
+//                WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+//
+//                lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+//                lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+//                lp.gravity = Gravity.CENTER;
+//
+//                lp.type = mLayoutParams.type + 2;
+//                lp.token = mLayoutParams.token;
+//
+//                lp.flags = WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS |
+//                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
+//                        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+//                        WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS |
+//                        WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
+//                lp.format = PixelFormat.TRANSLUCENT;
+//
+//                AppSelectController appSelectController = new AppSelectController(MinusScreenService.this, appType);
+//                mWindowManager.addView(appSelectController, lp);
+            }
+        });
+        minusScreenViewRoot.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                return MinusScreenService.this.onTouch(event);
+            }
+        });
+
+        mRootContainerLp = new WindowManager.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
+        mRootContainerLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        mRootContainerLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+        mRootContainerLp.gravity = Gravity.START;
+
+        // ensure minus screen's index large than Launcher
+        mRootContainerLp.type = parentWindowType + 1;
+        mRootContainerLp.token = parentWindowToken;
+
+        mRootContainerLp.flags = WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS |
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
+                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
+                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS |
+                WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
+        mRootContainerLp.x = -screenW;
+        mRootContainerLp.format = PixelFormat.TRANSLUCENT;
+        minusScreenViewRoot.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+
+        mWindowManager.addView(minusScreenViewRoot, mRootContainerLp);
+    }
+
+    private void removeMinusScreenView() {
+        if (minusScreenViewRoot != null && minusScreenViewRoot.getParent() != null) {
+            mWindowManager.removeViewImmediate(minusScreenViewRoot);
+            minusScreenViewRoot = null;
+            mRootContainerLp = null;
+        }
+    }
 
     @SuppressLint("HandlerLeak")
     public MinusScreenService() {
@@ -81,42 +164,33 @@ public class MinusScreenService extends Service {
                     }
 
                     case MsgOnWindowsAttached: {
+                        removeMinusScreenView();
+
                         Bundle bundle = (Bundle) msg.obj;
-                        if (minusScreenViewRoot != null && minusScreenViewRoot.getParent() != null) {
+                        WindowManager.LayoutParams parentWindowLp = bundle.getParcelable("layout_params");
+                        if (parentWindowLp == null) {
                             break;
                         }
-                        WindowManager.LayoutParams lp = bundle.getParcelable("layout_params");
-                        if (lp == null) {
-                            break;
+                        parentWindowToken = parentWindowLp.token;
+                        parentWindowType = parentWindowLp.type;
+
+                        addMinusScreenView();
+
+                        try {
+                            launcherOverlayCallback.overlayStatusChanged(1);
+                        } catch (RemoteException e) {
+                            // do nothing
                         }
-
-                        DisplayMetrics dm = getResources().getDisplayMetrics();
-                        screenW = dm.widthPixels;
-
-                        mRootContainerLp = new WindowManager.LayoutParams(ConstraintLayout.LayoutParams.MATCH_PARENT, ConstraintLayout.LayoutParams.MATCH_PARENT);
-                        mRootContainerLp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                        mRootContainerLp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-                        mRootContainerLp.gravity = Gravity.START;
-
-                        // ensure minus screen's index large than Launcher
-                        mRootContainerLp.type = lp.type + 1;
-                        mRootContainerLp.token = lp.token;
-                        mRootContainerLp.flags = WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS |
-                                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-                                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-                                WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS |
-                                WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
-                        mRootContainerLp.x = -screenW;
-                        mRootContainerLp.format = PixelFormat.TRANSLUCENT;
-                        mWindowManager.addView(minusScreenViewRoot, mRootContainerLp);
                         break;
                     }
 
                     case MsgOnWindowsDetach: {
-                        if (minusScreenViewRoot != null && minusScreenViewRoot.getParent() != null) {
-                            mWindowManager.removeViewImmediate(minusScreenViewRoot);
-                            minusScreenViewRoot = null;
-                            mRootContainerLp = null;
+                        removeMinusScreenView();
+
+                        try {
+                            launcherOverlayCallback.overlayStatusChanged(0);
+                        } catch (RemoteException e) {
+                            // do nothing
                         }
                         break;
                     }
@@ -134,7 +208,6 @@ public class MinusScreenService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        initEvent();
     }
 
     @Nullable
@@ -151,14 +224,22 @@ public class MinusScreenService extends Service {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 motionEventDownRawX = event.getRawX();
+                motionEventDownTriggerHome = false;
                 break;
             case MotionEvent.ACTION_MOVE:
-                offset = event.getRawX() - motionEventDownRawX;
-
+                offset = (event.getRawX() - motionEventDownRawX) * 4;
                 if (offset < 0) {
                     mRootContainerLp.x = (int) offset;
                     mWindowManager.updateViewLayout(minusScreenViewRoot, mRootContainerLp);
                     overlayScrollChanged(1 + offset / screenW);
+                    if (!motionEventDownTriggerHome) {
+                        motionEventDownTriggerHome = true;
+
+                        Intent startMain = new Intent(Intent.ACTION_MAIN);
+                        startMain.addCategory(Intent.CATEGORY_HOME);
+                        startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        startActivity(startMain);
+                    }
                 }
                 break;
             case MotionEvent.ACTION_UP:
@@ -199,49 +280,13 @@ public class MinusScreenService extends Service {
             public void onAnimationEnd(Animator animation) {
                 super.onAnimationEnd(animation);
                 animating.set(false);
+
+                if (endProgress >= 1f) {
+                    minusScreenViewRoot.onResume();
+                }
             }
         });
         animMinusScreen.start();
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    public void initEvent() {
-        minusScreenViewRoot = new MinusScreenViewRoot(this);
-        minusScreenViewRoot.setCallback(new MinusScreenAgentCallback() {
-            @Override
-            public boolean onTouch(MotionEvent event) {
-                return MinusScreenService.this.onTouch(event);
-            }
-
-            @Override
-            public void showAppSelect(int appType) {
-                // ToDo 实现APP选择
-//                WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
-//
-//                lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-//                lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
-//                lp.gravity = Gravity.CENTER;
-//
-//                lp.type = mLayoutParams.type + 2;
-//                lp.token = mLayoutParams.token;
-//
-//                lp.flags = WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS |
-//                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-//                        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
-//                        WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS |
-//                        WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
-//                lp.format = PixelFormat.TRANSLUCENT;
-//
-//                AppSelectController appSelectController = new AppSelectController(MinusScreenService.this, appType);
-//                mWindowManager.addView(appSelectController, lp);
-            }
-        });
-        minusScreenViewRoot.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                return MinusScreenService.this.onTouch(event);
-            }
-        });
     }
 
     private void overlayScrollChanged(float value) {
@@ -329,18 +374,15 @@ public class MinusScreenService extends Service {
         }
 
         @Override
-        public void windowAttached2(Bundle bundle, ILauncherOverlayCallback cb) throws RemoteException {
+        public void windowAttached2(Bundle bundle, ILauncherOverlayCallback cb) {
+            Log.d(Tag, "windowAttached2");
+            launcherOverlayCallback = cb;
+
             Message message = new Message();
             message.what = MsgOnWindowsAttached;
             message.obj = bundle;
             messageHandler.sendMessage(message);
-
-            if (cb != null) {
-                launcherOverlayCallback = cb;
-                cb.overlayStatusChanged(1);
-            }
         }
-
         @Override
         public void unusedMethod() throws RemoteException {
 
@@ -356,4 +398,46 @@ public class MinusScreenService extends Service {
             return false;
         }
     };
+
+    public static int getStatusBarHeight(Context context) {
+        int result = 0;
+        int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = context.getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+
+    public static int getNavBarWidth(Context context) {
+        Resources resources = context.getResources();
+        int result = 0;
+        int boolId = resources.getIdentifier("config_showNavigationBar", "bool", "android");
+        if (boolId != 0) {
+            int resourceId = resources.getIdentifier("navigation_bar_width", "dimen", "android");
+            result = resources.getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+
+    public static int getScreenWidth(WindowManager windowManager) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowMetrics windowMetrics = windowManager.getCurrentWindowMetrics();
+            return windowMetrics.getBounds().width();
+        } else {
+            DisplayMetrics outMetrics = new DisplayMetrics();
+            windowManager.getDefaultDisplay().getRealMetrics(outMetrics);
+            return outMetrics.widthPixels;
+        }
+    }
+
+    public static int getScreenHeight(WindowManager windowManager) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            WindowMetrics windowMetrics = windowManager.getCurrentWindowMetrics();
+            return windowMetrics.getBounds().height();
+        } else {
+            DisplayMetrics outMetrics = new DisplayMetrics();
+            windowManager.getDefaultDisplay().getRealMetrics(outMetrics);
+            return outMetrics.heightPixels;
+        }
+    }
 }
