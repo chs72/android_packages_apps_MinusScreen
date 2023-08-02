@@ -74,10 +74,12 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         int dimension8 = (int) getResources().getDimensionPixelSize(R.dimen.dp_8);
 
         View viewRoot = findViewById(R.id.minus_screen_container);
-        viewRoot.setPadding(MinusScreenService.getNavBarWidth(getContext()), 0, 0, 0);
-
+        if (isVerticalScreen()) {
+            viewRoot.setPadding(0, 0, 0, MinusScreenService.getNavBarHeight(getContext()));
+        } else {
+            viewRoot.setPadding(MinusScreenService.getNavBarWidth(getContext()), 0, 0, 0);
+        }
         RecyclerView appMenuRcv = findViewById(R.id.app_menu_rcv);
-        appMenuRcv.setPadding(dimension8, getStatusBarHeight(getContext()), dimension8, dimension8);
 
         View appContent = findViewById(R.id.app_content);
         ConstraintLayout.LayoutParams appContentLp = (ConstraintLayout.LayoutParams) appContent.getLayoutParams();
@@ -87,12 +89,13 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             appContentLp.topMargin = getStatusBarHeight(getContext());
             appContentLp.rightMargin = dimension8;
             appContentLp.bottomMargin = dimension8;
-            appMenuRcv.setPadding(dimension8, 0, dimension8, dimension8);
+            appMenuRcv.setPadding(dimension8, dimension8, dimension8, dimension8);
         } else {
             appContentLp.leftMargin = 0;
             appContentLp.topMargin = getStatusBarHeight(getContext());
             appContentLp.rightMargin = dimension8;
             appContentLp.bottomMargin = dimension8;
+            appMenuRcv.setPadding(dimension8, getStatusBarHeight(getContext()), dimension8, dimension8);
         }
 
         appContent.setLayoutParams(appContentLp);

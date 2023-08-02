@@ -401,6 +401,17 @@ public class MinusScreenService extends Service {
         return result;
     }
 
+    public static int getNavBarHeight(Context context) {
+        Resources resources = context.getResources();
+        int result = 0;
+        int boolId = resources.getIdentifier("config_showNavigationBar", "bool", "android");
+        if (boolId != 0) {
+            int resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
+            result = resources.getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
+
     public static int getScreenWidth(WindowManager windowManager) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             WindowMetrics windowMetrics = windowManager.getCurrentWindowMetrics();
