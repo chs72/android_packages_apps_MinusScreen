@@ -7,6 +7,7 @@
     <string name="unknown_singer">未知歌手</string>
     <string name="select_app">請選擇一個應用</string>
 
+    <string name="click_to_setting">點擊設置</string>
     <string name="title_activity_settings">負一屏設置</string>
     <string name="freeformApp">控件設置</string>
     <string name="freeformAppSummary">點擊左側小控件時，右側顯示的應用程式</string>

@@ -8,9 +8,9 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="setting_btn">#FF197DFF</color>
-    <color name="text_333">#FF333333</color>
-    <color name="text_666">#FF666666</color>
+    <color name="text_333">#FFCCCCCC</color>
+    <color name="text_666">#FF999999</color>
     <color name="text_999">#FF999999</color>
 
-    <color name="empty_app_bg_color">#FFFFFFFF</color>
+    <color name="empty_app_bg_color">#FF1E2636</color>
 </resources>

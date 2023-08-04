@@ -27,15 +27,26 @@
             android:id="@+id/empty_bg"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#90000000"
+            android:background="@color/empty_app_bg_color"
             android:gravity="center"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
+            <ImageView
+                android:layout_width="@dimen/dp_137"
+                android:layout_height="@dimen/dp_111"
+                android:background="@mipmap/empty_app"/>
             <Button
                 android:id="@+id/config_btn"
+                android:background="@drawable/setting_btn_bg"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/title_activity_settings" />
+                android:layout_height="@dimen/dp_24"
+                android:minHeight="@dimen/dp_0"
+                android:textColor="@color/setting_btn"
+                android:textSize="@dimen/sp_11"
+                android:paddingHorizontal="@dimen/dp_30"
+                android:text="@string/click_to_setting" />
+
+
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

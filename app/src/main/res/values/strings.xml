@@ -9,6 +9,7 @@
     <string name="select_app">Please select an application</string>
     <string name="cancel">Cancel</string>
 
+    <string name="click_to_setting">Click to setting</string>
     <string name="title_activity_settings">SmartSpace Settings</string>
     <string name="freeformApp">Widget Settings</string>
     <string name="freeformAppSummary">The app displayed on the right when clicking on the small widget on the left.</string>

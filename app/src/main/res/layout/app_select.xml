@@ -13,7 +13,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        android:background="@drawable/app_select_layout_bg">
+        android:background="@drawable/setting_btn_bg">
         <TextView
             android:id="@+id/app_select_title"
             android:layout_width="wrap_content"
