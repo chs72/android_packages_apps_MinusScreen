@@ -1,9 +1,5 @@
 package com.okcaros.minusscreen;
 
-import static com.okcaros.minusscreen.MinusScreenService.getScreenHeight;
-import static com.okcaros.minusscreen.MinusScreenService.getScreenWidth;
-import static com.okcaros.minusscreen.MinusScreenService.getStatusBarHeight;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -24,6 +20,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.okcaros.minusscreen.setting.SettingsActivity;
+import com.okcaros.tool.ScreenTool;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,8 +58,9 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
     private void init() {
         WindowManager windowManager = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-        int screenW = getScreenWidth(windowManager);
-        int screenH = getScreenHeight(windowManager);
+        ScreenTool.ScreenInfo screenInfo = ScreenTool.getScreenInfo(getContext());
+        int screenW = screenInfo.realWidth;
+        int screenH = screenInfo.realHeight;
         screenRatio = (float) screenW / screenH;
 
         if (isVerticalScreen()) {
@@ -75,9 +73,9 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
         View viewRoot = findViewById(R.id.minus_screen_container);
         if (isVerticalScreen()) {
-            viewRoot.setPadding(0, 0, 0, MinusScreenService.getNavBarHeight(getContext()));
+            viewRoot.setPadding(0, 0, 0, screenInfo.navBarSize);
         } else {
-            viewRoot.setPadding(MinusScreenService.getNavBarWidth(getContext()), 0, 0, 0);
+            viewRoot.setPadding(screenInfo.navBarSize, 0, 0, 0);
         }
         RecyclerView appMenuRcv = findViewById(R.id.app_menu_rcv);
 
@@ -86,16 +84,16 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
         if (isVerticalScreen()) {
             appContentLp.leftMargin = dimension8;
-            appContentLp.topMargin = getStatusBarHeight(getContext());
+            appContentLp.topMargin = screenInfo.statusBarSize;
             appContentLp.rightMargin = dimension8;
             appContentLp.bottomMargin = dimension8;
             appMenuRcv.setPadding(dimension8, dimension8, dimension8, dimension8);
         } else {
             appContentLp.leftMargin = 0;
-            appContentLp.topMargin = getStatusBarHeight(getContext());
+            appContentLp.topMargin = screenInfo.statusBarSize;
             appContentLp.rightMargin = dimension8;
             appContentLp.bottomMargin = dimension8;
-            appMenuRcv.setPadding(dimension8, getStatusBarHeight(getContext()), dimension8, dimension8);
+            appMenuRcv.setPadding(dimension8, screenInfo.statusBarSize, dimension8, dimension8);
         }
 
         appContent.setLayoutParams(appContentLp);
@@ -230,19 +228,19 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 super(itemView);
 
                 int parentHeight = parent.getMeasuredHeight();
-
+                ScreenTool.ScreenInfo screenInfo = ScreenTool.getScreenInfo(getContext());
                 if (isVerticalScreen()) {
                     itemView.getLayoutParams().width = (int) ((parent.getMeasuredWidth() - 2 * getResources().getDimensionPixelSize(R.dimen.dp_8)) / 2);
                     return;
                 }
 
                 if (isWideScreen()) {
-                    itemView.getLayoutParams().height = (int) ((parentHeight - 2 * getResources().getDimensionPixelSize(R.dimen.dp_8) - getStatusBarHeight(getContext())) / 2);
+                    itemView.getLayoutParams().height = (int) ((parentHeight - 2 * getResources().getDimensionPixelSize(R.dimen.dp_8) - screenInfo.statusBarSize) / 2);
                     return;
                 }
 
                 // normal screen
-                itemView.getLayoutParams().height = (int) ((parentHeight - 3 * getResources().getDimensionPixelSize(R.dimen.dp_8) - getStatusBarHeight(getContext())) / 3);
+                itemView.getLayoutParams().height = (int) ((parentHeight - 3 * getResources().getDimensionPixelSize(R.dimen.dp_8) - screenInfo.statusBarSize) / 3);
             }
         }
 

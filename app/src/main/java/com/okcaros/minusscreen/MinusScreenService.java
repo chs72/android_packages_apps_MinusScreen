@@ -31,6 +31,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import com.google.android.libraries.launcherclient.ILauncherOverlay;
 import com.google.android.libraries.launcherclient.ILauncherOverlayCallback;
 import com.okcaros.minusscreen.setting.SettingsActivity;
+import com.okcaros.tool.ScreenTool;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -60,7 +61,8 @@ public class MinusScreenService extends Service {
             Log.e(Tag, "addMinusScreenView failed, parentWindowToken is NULL");
             return;
         }
-        screenW = getScreenWidth(mWindowManager);
+        ScreenTool.ScreenInfo screenInfo = ScreenTool.getScreenInfo(getApplicationContext());
+        screenW = screenInfo.realWidth;
 
         minusScreenViewRoot = new MinusScreenViewRoot(this);
         minusScreenViewRoot.setCallback(new MinusScreenAgentCallback() {
@@ -380,57 +382,4 @@ public class MinusScreenService extends Service {
             return false;
         }
     };
-
-    public static int getStatusBarHeight(Context context) {
-        int result = 0;
-        int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            result = context.getResources().getDimensionPixelSize(resourceId);
-        }
-        return result;
-    }
-
-    public static int getNavBarWidth(Context context) {
-        Resources resources = context.getResources();
-        int result = 0;
-        int boolId = resources.getIdentifier("config_showNavigationBar", "bool", "android");
-        if (boolId != 0) {
-            int resourceId = resources.getIdentifier("navigation_bar_width", "dimen", "android");
-            result = resources.getDimensionPixelSize(resourceId);
-        }
-        return result;
-    }
-
-    public static int getNavBarHeight(Context context) {
-        Resources resources = context.getResources();
-        int result = 0;
-        int boolId = resources.getIdentifier("config_showNavigationBar", "bool", "android");
-        if (boolId != 0) {
-            int resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
-            result = resources.getDimensionPixelSize(resourceId);
-        }
-        return result;
-    }
-
-    public static int getScreenWidth(WindowManager windowManager) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            WindowMetrics windowMetrics = windowManager.getCurrentWindowMetrics();
-            return windowMetrics.getBounds().width();
-        } else {
-            DisplayMetrics outMetrics = new DisplayMetrics();
-            windowManager.getDefaultDisplay().getRealMetrics(outMetrics);
-            return outMetrics.widthPixels;
-        }
-    }
-
-    public static int getScreenHeight(WindowManager windowManager) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            WindowMetrics windowMetrics = windowManager.getCurrentWindowMetrics();
-            return windowMetrics.getBounds().height();
-        } else {
-            DisplayMetrics outMetrics = new DisplayMetrics();
-            windowManager.getDefaultDisplay().getRealMetrics(outMetrics);
-            return outMetrics.heightPixels;
-        }
-    }
 }
