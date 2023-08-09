@@ -15,4 +15,5 @@
     <string name="freeformAppSummary">The app displayed on the right when clicking on the small widget on the left.</string>
     <string name="freeformAppMap">Map Widget</string>
     <string name="freeformAppMusic">Music Widget</string>
+    <string name="freeformAppWeather">Weather Widget</string>
 </resources>

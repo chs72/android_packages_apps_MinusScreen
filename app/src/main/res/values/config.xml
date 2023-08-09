@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="preference_key_map" translatable="false">freeformAppMap</string>
+    <string name="preference_key_music" translatable="false">freeformAppMusic</string>
+    <string name="preference_key_weather" translatable="false">freeformAppWeather</string>
+</resources>

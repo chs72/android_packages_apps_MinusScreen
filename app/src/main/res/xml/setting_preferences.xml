@@ -3,21 +3,20 @@
     <PreferenceCategory
         app:summary="@string/freeformAppSummary"
         app:title="@string/freeformApp">
-        <ListPreference
-            app:defaultValue="reply"
-            app:entries="@array/reply_entries"
-            app:entryValues="@array/reply_values"
-            app:key="freeformAppMap"
-            app:title="@string/freeformAppMap"
-            app:useSimpleSummaryProvider="true" />
 
         <ListPreference
-            app:defaultValue="reply"
-            app:entries="@array/reply_entries"
-            app:entryValues="@array/reply_values"
-            app:key="freeformAppMusic"
+            app:key="@string/preference_key_map"
+            app:title="@string/freeformAppMap"
+            app:useSimpleSummaryProvider="true"
+            app:entries="@array/app_names"
+            app:entryValues="@array/app_package_names" />
+
+        <ListPreference
+            app:key="@string/preference_key_music"
             app:title="@string/freeformAppMusic"
-            app:useSimpleSummaryProvider="true" />
+            app:useSimpleSummaryProvider="true"
+            app:entries="@array/app_names"
+            app:entryValues="@array/app_package_names" />
     </PreferenceCategory>
 
 <!--    <PreferenceCategory app:title="@string/sync_header">-->

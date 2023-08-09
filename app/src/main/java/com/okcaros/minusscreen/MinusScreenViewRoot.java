@@ -7,6 +7,8 @@ import static android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -19,6 +21,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -29,7 +32,6 @@ import com.okcaros.tool.ScreenTool;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MinusScreenViewRoot extends ConstraintLayout {
     private final static String Tag = "MinusScreenViewRoot";
@@ -151,6 +153,12 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         return (float) screenInfo.realWidth / screenInfo.realHeight >= wideScreenRatio;
     }
 
+    private void openSetting(Context context) {
+        Intent i = new Intent(context, SettingsActivity.class);
+        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        context.startActivity(i);
+    }
+
     public class AppMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         @NonNull
         @Override
@@ -267,7 +275,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             @SuppressLint("ClickableViewAccessibility")
             public MapViewHolder(@NonNull View itemView, @NonNull ViewGroup parent) {
                 super(itemView, parent);
-                itemView.findViewById(R.id.nav_icon).setOnClickListener(new OnClickListener() {
+                itemView.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         openFreeformApp(TYPE_MAP);
@@ -286,7 +294,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 musicName = itemView.findViewById(R.id.music_name);
                 musicAuthor = itemView.findViewById(R.id.music_author);
 
-                itemView.findViewById(R.id.music_thumb_icon).setOnClickListener(new OnClickListener() {
+                itemView.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         openFreeformApp(TYPE_MUSIC);
@@ -309,7 +317,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 weatherDetail = itemView.findViewById(R.id.weather_detail);
                 location = itemView.findViewById(R.id.weather_location);
 
-                weatherIcon.setOnClickListener(new OnClickListener() {
+                itemView.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         openFreeformApp(TYPE_WEATHER);
@@ -413,20 +421,24 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
     private void openFreeformApp(int wType) {
         activeWidgetType = wType;
-        // ToDo 根据wType查询数据 找到用户选择的APP
+
+        SharedPreferences sharedConfig = PreferenceManager.getDefaultSharedPreferences(getContext());
         String pgName = "";
         switch (wType) {
             case TYPE_MAP: {
-                pgName = "com.autonavi.amapauto";
+                pgName = sharedConfig.getString(getResources().getString(R.string.preference_key_map), "");
                 break;
             }
             case TYPE_MUSIC: {
-                pgName = "com.netease.cloudmusic";
+                pgName = sharedConfig.getString(getResources().getString(R.string.preference_key_music), "");
                 break;
             }
+            case TYPE_WEATHER: {
+
+            }
         }
-        // ToDo 添加改pgName是否已经安装(以应对APP被卸载的情况)
-        if (!pgName.equals("")) {
+
+        if (!pgName.equals("") && isAppInstalled(pgName)) {
             findViewById(R.id.empty_bg).setVisibility(INVISIBLE);
             appAndEnterFreeForm(pgName);
             return;
@@ -456,6 +468,18 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         intent.putExtra("bottom", bottom);
 
         getContext().sendBroadcast(intent);
+    }
+
+    private boolean isAppInstalled(String packageName){
+        PackageManager pm = getContext().getPackageManager();
+        boolean installed = false;
+        try {
+            pm.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES);
+            installed = true;
+        } catch (PackageManager.NameNotFoundException e){
+            installed = false;
+        }
+        return installed;
     }
 
     public void onMediaInfoChange(String title,

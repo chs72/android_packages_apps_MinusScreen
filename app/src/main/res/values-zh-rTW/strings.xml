@@ -13,4 +13,5 @@
     <string name="freeformAppSummary">點擊左側小控件時，右側顯示的應用程式</string>
     <string name="freeformAppMap">地圖控件</string>
     <string name="freeformAppMusic">音樂控件</string>
+    <string name="freeformAppWeather">天氣控件</string>
 </resources>
