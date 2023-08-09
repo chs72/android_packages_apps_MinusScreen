@@ -8,6 +8,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -22,53 +23,32 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.okcaros.minusscreen.setting.SettingsActivity;
+import com.okcaros.tool.AndroidTool;
 import com.okcaros.tool.PcConst;
 import com.okcaros.tool.ScreenTool;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MinusScreenViewRoot extends ConstraintLayout {
     private final static String Tag = "MinusScreenViewRoot";
     public static final int TYPE_MAP = 1;
     public static final int TYPE_MUSIC = 2;
     public static final int TYPE_WEATHER = 3;
-    float screenRatio;
-    int activeAppPosition = 0;
-    private String activePackageName = null;
+
+    // Used to identify whether the widget has been automatically opened When MinusScreen first show.
+    boolean initActiveCalled = false;
+    private int activeWidgetType = TYPE_MAP;
     private MinusScreenService.MinusScreenAgentCallback callback;
     private final List<MenuAppEntity> dataList = new ArrayList<>();
-    private AppMenuAdapter appMenuAdapter = null;
+    private final AppMenuAdapter appMenuAdapter;
 
     public MinusScreenViewRoot(@NonNull Context context) {
         super(context);
-
-        init();
-    }
-
-    public MinusScreenViewRoot(@NonNull Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
-        init();
-    }
-
-    public MinusScreenViewRoot(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        init();
-    }
-
-    public MinusScreenViewRoot(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
-        init();
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    private void init() {
-        dataList.clear();
+        appMenuAdapter = new AppMenuAdapter();
 
         ScreenTool.ScreenInfo screenInfo = ScreenTool.getScreenInfo(getContext());
-        int screenW = screenInfo.realWidth;
-        int screenH = screenInfo.realHeight;
-        screenRatio = (float) screenW / screenH;
 
         if (isVerticalScreen()) {
             inflate(getContext(), R.layout.minus_screen_vertical, this);
@@ -76,7 +56,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             inflate(getContext(), R.layout.minus_screen, this);
         }
 
-        int dimension8 = (int) getResources().getDimensionPixelSize(R.dimen.dp_8);
+        int dimension8 = getResources().getDimensionPixelSize(R.dimen.dp_8);
 
         View viewRoot = findViewById(R.id.minus_screen_container);
         if (isVerticalScreen()) {
@@ -112,7 +92,6 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             dataList.add(new MenuAppEntity(TYPE_WEATHER));
         }
 
-        appMenuAdapter = new AppMenuAdapter();
         appMenuRcv.setAdapter(appMenuAdapter);
 
         appMenuRcv.setLayoutManager(new LinearLayoutManager(getContext(), isVerticalScreen() ? LinearLayoutManager.HORIZONTAL : LinearLayoutManager.VERTICAL, false));
@@ -124,16 +103,36 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             return callback.onTouch(event);
         });
 
-
         findViewById(R.id.config_btn).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (callback == null) {
                     return;
                 }
-                callback.configApp(activeAppPosition);
+                callback.configApp();
             }
         });
+    }
+
+    public MinusScreenViewRoot(@NonNull Context context, @Nullable AttributeSet attrs) {
+        super(context, attrs);
+
+        appMenuAdapter = null;
+        Log.e(Tag, "unSupport MinusScreenViewRoot constructor");
+    }
+
+    public MinusScreenViewRoot(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
+
+        appMenuAdapter = null;
+        Log.e(Tag, "unSupport MinusScreenViewRoot constructor");
+    }
+
+    public MinusScreenViewRoot(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+        super(context, attrs, defStyleAttr, defStyleRes);
+
+        appMenuAdapter = null;
+        Log.e(Tag, "unSupport MinusScreenViewRoot constructor");
     }
 
     public void setCallback(MinusScreenService.MinusScreenAgentCallback callback) {
@@ -142,12 +141,14 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
     private boolean isVerticalScreen() {
         float verticalScreenRatio = 0.5f;
-        return screenRatio <= verticalScreenRatio;
+        ScreenTool.ScreenInfo screenInfo = ScreenTool.getScreenInfo(getContext());
+        return (float) screenInfo.realWidth / screenInfo.realHeight <= verticalScreenRatio;
     }
 
     private boolean isWideScreen() {
         float wideScreenRatio = 2.5f;
-        return screenRatio >= wideScreenRatio;
+        ScreenTool.ScreenInfo screenInfo = ScreenTool.getScreenInfo(getContext());
+        return (float) screenInfo.realWidth / screenInfo.realHeight >= wideScreenRatio;
     }
 
     public class AppMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -229,15 +230,6 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 weatherViewHolder.weatherDetail.setText("多云");
                 weatherViewHolder.location.setText("杭州市萧山区");
             }
-
-            holder.itemView.setOnTouchListener(new OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    // change active app
-                    activeAppPosition = holder.getAdapterPosition();
-                    return false;
-                }
-            });
         }
 
         @Override
@@ -278,7 +270,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 itemView.findViewById(R.id.nav_icon).setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        appAndEnterFreeForm("com.autonavi.amapauto");
+                        openFreeformApp(TYPE_MAP);
                     }
                 });
             }
@@ -297,7 +289,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 itemView.findViewById(R.id.music_thumb_icon).setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        appAndEnterFreeForm("com.netease.cloudmusic");
+                        openFreeformApp(TYPE_MUSIC);
                     }
                 });
             }
@@ -320,9 +312,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 weatherIcon.setOnClickListener(new OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Intent i = new Intent(v.getContext(), SettingsActivity.class);
-                        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        v.getContext().startActivity(i);
+                        openFreeformApp(TYPE_WEATHER);
                     }
                 });
             }
@@ -421,14 +411,35 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         }
     }
 
-    private void appAndEnterFreeForm(String packageName) {
-        activePackageName = packageName;
+    private void openFreeformApp(int wType) {
+        activeWidgetType = wType;
+        // ToDo 根据wType查询数据 找到用户选择的APP
+        String pgName = "";
+        switch (wType) {
+            case TYPE_MAP: {
+                pgName = "com.autonavi.amapauto";
+                break;
+            }
+            case TYPE_MUSIC: {
+                pgName = "com.netease.cloudmusic";
+                break;
+            }
+        }
+        // ToDo 添加改pgName是否已经安装(以应对APP被卸载的情况)
+        if (!pgName.equals("")) {
+            findViewById(R.id.empty_bg).setVisibility(INVISIBLE);
+            appAndEnterFreeForm(pgName);
+            return;
+        }
+        // 隐藏所有FreeForm窗口
+        AndroidTool.backHome(getContext());
+        findViewById(R.id.empty_bg).setVisibility(VISIBLE);
+    }
 
+    private void appAndEnterFreeForm(String packageName) {
         int[] location = new int[2];
         View appContentView = findViewById(R.id.app_content);
         appContentView.getLocationInWindow(location);
-
-        findViewById(R.id.empty_bg).setVisibility(INVISIBLE);
 
         int left = location[0];
         int top = location[1];
@@ -445,13 +456,6 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         intent.putExtra("bottom", bottom);
 
         getContext().sendBroadcast(intent);
-    }
-
-
-    public void onResume() {
-        if (activePackageName != null && !activePackageName.equals("")) {
-            appAndEnterFreeForm(activePackageName);
-        }
     }
 
     public void onMediaInfoChange(String title,
@@ -474,6 +478,13 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         }
         if (appMenuAdapter != null) {
             appMenuAdapter.notifyItemChanged(musicPosition);
+        }
+    }
+
+    public void onStateChange(MinusScreenService.MinusScreenState state) {
+        if (state == MinusScreenService.MinusScreenState.SHOW && (callback.needResumeFreeformWindow() || !initActiveCalled)) {
+            openFreeformApp(activeWidgetType);
+            initActiveCalled = true;
         }
     }
 }

@@ -7,15 +7,12 @@ import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.graphics.PixelFormat;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.RemoteException;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -30,6 +27,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import com.google.android.libraries.launcherclient.ILauncherOverlay;
 import com.google.android.libraries.launcherclient.ILauncherOverlayCallback;
 import com.okcaros.minusscreen.setting.SettingsActivity;
+import com.okcaros.tool.AndroidTool;
 import com.okcaros.tool.ScreenTool;
 
 import org.greenrobot.eventbus.EventBus;
@@ -44,10 +42,15 @@ public class MinusScreenService extends Service {
     private final static int MsgOnScrollEnd = 2;
     private final static int MsgOnWindowsAttached = 3;
     private final static int MsgOnWindowsDetach = 4;
+
+    public enum MinusScreenState {
+        SHOW,
+        Hide
+    }
+
     WindowManager mWindowManager;
     private int parentWindowType = 0;
     private IBinder parentWindowToken = null;
-
     private WindowManager.LayoutParams mRootContainerLp;
     private MinusScreenViewRoot minusScreenViewRoot;
     private final Handler messageHandler;
@@ -57,8 +60,9 @@ public class MinusScreenService extends Service {
     private int screenW;
     private float overlayScrollValue;
     private final AtomicBoolean animating = new AtomicBoolean(false);
-
     private MainReceiver mainReceiver;
+
+    private MinusScreenState minusScreenState = MinusScreenState.Hide;
 
     private void addMinusScreenView() {
         if (parentWindowToken == null) {
@@ -76,10 +80,15 @@ public class MinusScreenService extends Service {
             }
 
             @Override
-            public void configApp(int appType) {
+            public void configApp() {
                 Intent intent = new Intent(MinusScreenService.this, SettingsActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
+            }
+
+            @Override
+            public boolean needResumeFreeformWindow() {
+                return motionEventDownTriggerHome;
             }
         });
         minusScreenViewRoot.setOnTouchListener(new View.OnTouchListener() {
@@ -189,7 +198,9 @@ public class MinusScreenService extends Service {
     public interface MinusScreenAgentCallback {
         boolean onTouch(MotionEvent event);
 
-        void configApp(int appType);
+        void configApp();
+
+        boolean needResumeFreeformWindow();
     }
 
     @Override
@@ -231,13 +242,12 @@ public class MinusScreenService extends Service {
                     mRootContainerLp.x = (int) offset;
                     mWindowManager.updateViewLayout(minusScreenViewRoot, mRootContainerLp);
                     overlayScrollChanged(1 + offset / screenW);
-                    if (!motionEventDownTriggerHome) {
+
+                    if (!motionEventDownTriggerHome && -offset >= screenW * MinSwipeRatio / 2) {
                         motionEventDownTriggerHome = true;
 
-                        Intent startMain = new Intent(Intent.ACTION_MAIN);
-                        startMain.addCategory(Intent.CATEGORY_HOME);
-                        startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        startActivity(startMain);
+                        // 隐藏所有FreeForm窗口
+                        AndroidTool.backHome(getApplicationContext());
                     }
                 }
                 break;
@@ -276,13 +286,18 @@ public class MinusScreenService extends Service {
         });
         animMinusScreen.addListener(new AnimatorListenerAdapter() {
             @Override
+            public void onAnimationStart(Animator animation) {
+                super.onAnimationStart(animation);
+            }
+
+            @Override
             public void onAnimationEnd(Animator animation) {
                 super.onAnimationEnd(animation);
-                animating.set(false);
 
-                if (endProgress >= 1f) {
-                    minusScreenViewRoot.onResume();
-                }
+                setMinusScreenState(
+                        endProgress >= 1f ? MinusScreenState.SHOW : MinusScreenState.Hide
+                );
+                animating.set(false);
             }
         });
         animMinusScreen.start();
@@ -408,6 +423,13 @@ public class MinusScreenService extends Service {
                     event.data.getArtist(),
                     event.data.getDuration()
             );
+        }
+    }
+
+    public void setMinusScreenState(MinusScreenState minusScreenState) {
+        this.minusScreenState = minusScreenState;
+        if (minusScreenViewRoot != null) {
+            minusScreenViewRoot.onStateChange(this.minusScreenState);
         }
     }
 }
