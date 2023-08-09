@@ -33,6 +33,9 @@ import com.google.android.libraries.launcherclient.ILauncherOverlayCallback;
 import com.okcaros.minusscreen.setting.SettingsActivity;
 import com.okcaros.tool.ScreenTool;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MinusScreenService extends Service {
@@ -55,6 +58,8 @@ public class MinusScreenService extends Service {
     private int screenW;
     private float overlayScrollValue;
     private final AtomicBoolean animating = new AtomicBoolean(false);
+
+    private MainReceiver mainReceiver;
 
     private void addMinusScreenView() {
         if (parentWindowToken == null) {
@@ -191,6 +196,18 @@ public class MinusScreenService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        EventBus.getDefault().register(this);
+
+        mainReceiver = new MainReceiver();
+        mainReceiver.register(this);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
+
+        unregisterReceiver(mainReceiver);
     }
 
     @Nullable
@@ -382,4 +399,16 @@ public class MinusScreenService extends Service {
             return false;
         }
     };
+
+    @Subscribe()
+    public void onMediaInfo(EventBusEvent.MediaInfo event) {
+        if (minusScreenViewRoot != null) {
+            minusScreenViewRoot.onMediaInfoChange(
+                    event.data.getTitle(),
+                    event.data.getAlbumTitle(),
+                    event.data.getArtist(),
+                    event.data.getDuration()
+            );
+        }
+    }
 }

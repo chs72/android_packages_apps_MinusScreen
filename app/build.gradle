@@ -69,4 +69,6 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.androidx.test.ext.junit
     androidTestImplementation libs.espresso.core
+
+    implementation("org.greenrobot:eventbus:3.3.1")
 }

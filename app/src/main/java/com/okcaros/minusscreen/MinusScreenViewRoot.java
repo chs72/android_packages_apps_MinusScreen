@@ -4,12 +4,10 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -34,6 +32,8 @@ public class MinusScreenViewRoot extends ConstraintLayout {
     int activeAppPosition = 0;
     private String activePackageName = null;
     private MinusScreenService.MinusScreenAgentCallback callback;
+    private final List<MenuAppEntity> dataList = new ArrayList<>();
+    private AppMenuAdapter appMenuAdapter = null;
 
     public MinusScreenViewRoot(@NonNull Context context) {
         super(context);
@@ -56,8 +56,10 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         init();
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     private void init() {
-        WindowManager windowManager = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
+        dataList.clear();
+
         ScreenTool.ScreenInfo screenInfo = ScreenTool.getScreenInfo(getContext());
         int screenW = screenInfo.realWidth;
         int screenH = screenInfo.realHeight;
@@ -98,8 +100,6 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
         appContent.setLayoutParams(appContentLp);
 
-        List<MenuAppEntity> dataList = new ArrayList<>();
-
         dataList.add(new MenuAppEntity(TYPE_MAP));
         dataList.add(new MenuAppEntity(TYPE_MUSIC));
 
@@ -107,8 +107,8 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             dataList.add(new MenuAppEntity(TYPE_WEATHER));
         }
 
-        AppMenuAdapter adapter = new AppMenuAdapter(dataList);
-        appMenuRcv.setAdapter(adapter);
+        appMenuAdapter = new AppMenuAdapter();
+        appMenuRcv.setAdapter(appMenuAdapter);
 
         appMenuRcv.setLayoutManager(new LinearLayoutManager(getContext(), isVerticalScreen() ? LinearLayoutManager.HORIZONTAL : LinearLayoutManager.VERTICAL, false));
 
@@ -146,12 +146,6 @@ public class MinusScreenViewRoot extends ConstraintLayout {
     }
 
     public class AppMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-        private List<MenuAppEntity> dataList;
-
-        public AppMenuAdapter(List<MenuAppEntity> dataList) {
-            this.dataList = dataList;
-        }
-
         @NonNull
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -177,7 +171,6 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                     break;
                 }
                 default:
-                    Log.e("oklauncher", "不会都是这里吧" + viewType);
                     view = inflater.inflate(R.layout.app_map_item, parent, false);
                     viewHolder = new MapViewHolder(view, parent);
                     break;
@@ -193,8 +186,12 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
             } else if (holder instanceof MusicViewHolder) {
                 MusicViewHolder musicViewHolder = (MusicViewHolder) holder;
-                musicViewHolder.musicName.setText(getResources().getText(R.string.unknown_music));
-                musicViewHolder.musicAuthor.setText(getResources().getText(R.string.unknown_singer));
+                Object data = dataList.get(position).getData();
+                if (data instanceof MenuAppEntity.MediaMenuEntityData) {
+                    MenuAppEntity.MediaMenuEntityData mediaData = (MenuAppEntity.MediaMenuEntityData) data;
+                    musicViewHolder.musicName.setText(mediaData.getTitle());
+                    musicViewHolder.musicAuthor.setText(mediaData.getArtist());
+                }
             } else if (holder instanceof WeatherViewHolder) {
                 WeatherViewHolder weatherViewHolder = (WeatherViewHolder) holder;
 
@@ -303,11 +300,23 @@ public class MinusScreenViewRoot extends ConstraintLayout {
     }
 
     public static class MenuAppEntity {
+        private int type;
+        private Object data;
+
         public MenuAppEntity(int type) {
             this.type = type;
-        }
 
-        private int type;
+            switch (type) {
+                case TYPE_WEATHER:
+                case TYPE_MAP: {
+                    break;
+                }
+                case TYPE_MUSIC: {
+                    this.data = new MediaMenuEntityData();
+                    break;
+                }
+            }
+        }
 
         public int getType() {
             return type;
@@ -315,6 +324,70 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
         public void setType(int type) {
             this.type = type;
+        }
+
+        public void setData(Object data) {
+            this.data = data;
+        }
+
+        public Object getData() {
+            return data;
+        }
+
+        public static class MediaMenuEntityData {
+            private String title = "";
+            private String albumTitle = "";
+            private String artist = "";
+
+            private int duration = 0;
+
+            public MediaMenuEntityData() {
+
+            }
+
+            public MediaMenuEntityData(
+                    String title,
+                    String albumTitle,
+                    String artist,
+                    int duration
+            ) {
+                this.artist = artist;
+                this.albumTitle = albumTitle;
+                this.title = title;
+                this.duration = duration;
+            }
+
+            public String getTitle() {
+                return title;
+            }
+
+            public void setTitle(String title) {
+                this.title = title;
+            }
+
+            public String getAlbumTitle() {
+                return albumTitle;
+            }
+
+            public void setAlbumTitle(String albumTitle) {
+                this.albumTitle = albumTitle;
+            }
+
+            public String getArtist() {
+                return artist;
+            }
+
+            public void setArtist(String artist) {
+                this.artist = artist;
+            }
+
+            public int getDuration() {
+                return duration;
+            }
+
+            public void setDuration(int duration) {
+                this.duration = duration;
+            }
         }
     }
 
@@ -348,6 +421,29 @@ public class MinusScreenViewRoot extends ConstraintLayout {
     public void onResume() {
         if (activePackageName != null && !activePackageName.equals("")) {
             appAndEnterFreeForm(activePackageName);
+        }
+    }
+
+    public void onMediaInfoChange(String title,
+                                  String albumTitle,
+                                  String artist,
+                                  int duration) {
+
+        int musicPosition = -1;
+        for (MenuAppEntity entity : dataList) {
+            musicPosition++;
+            if (entity.getType() != TYPE_MUSIC) {
+                continue;
+            }
+            MenuAppEntity.MediaMenuEntityData data = (MenuAppEntity.MediaMenuEntityData) entity.getData();
+            data.setArtist(artist);
+            data.setAlbumTitle(albumTitle);
+            data.setTitle(title);
+            data.setDuration(duration);
+            break;
+        }
+        if (appMenuAdapter != null) {
+            appMenuAdapter.notifyItemChanged(musicPosition);
         }
     }
 }
