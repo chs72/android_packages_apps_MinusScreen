@@ -1,5 +1,7 @@
 package com.okcaros.minusscreen;
 
+import static com.okcaros.tool.PcConst.NORMAL_PC_MEDIA_INFO;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,8 +11,6 @@ import org.greenrobot.eventbus.EventBus;
 
 public class MainReceiver extends BroadcastReceiver {
     private final static String Tag = "MainReceiver";
-    public final static String ActionPcMediaInfo = "pc.intent.action.pc.VC_MEDIA_INFO";
-
     @Override
     public void onReceive(Context context, Intent intent) {
         if (intent == null) {
@@ -22,7 +22,7 @@ public class MainReceiver extends BroadcastReceiver {
         }
 
         switch (action) {
-            case ActionPcMediaInfo: {
+            case NORMAL_PC_MEDIA_INFO: {
                 EventBus.getDefault().post(new EventBusEvent.MediaInfo(
                         new MinusScreenViewRoot.MenuAppEntity.MediaMenuEntityData(intent.getStringExtra("title"),
                                 intent.getStringExtra("albumTitle"),
@@ -37,7 +37,7 @@ public class MainReceiver extends BroadcastReceiver {
 
     public void register(Context context) {
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ActionPcMediaInfo);
+        intentFilter.addAction(NORMAL_PC_MEDIA_INFO);
 
         context.registerReceiver(this, intentFilter);
     }

@@ -1,5 +1,9 @@
 package com.okcaros.minusscreen;
 
+import static android.view.KeyEvent.KEYCODE_MEDIA_NEXT;
+import static android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE;
+import static android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -18,6 +22,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.okcaros.minusscreen.setting.SettingsActivity;
+import com.okcaros.tool.PcConst;
 import com.okcaros.tool.ScreenTool;
 
 import java.util.ArrayList;
@@ -191,6 +196,31 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                     MenuAppEntity.MediaMenuEntityData mediaData = (MenuAppEntity.MediaMenuEntityData) data;
                     musicViewHolder.musicName.setText(mediaData.getTitle());
                     musicViewHolder.musicAuthor.setText(mediaData.getArtist());
+
+                    musicViewHolder.itemView.findViewById(R.id.music_next).setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
+                            intent.putExtra("action", KEYCODE_MEDIA_NEXT);
+                            v.getContext().sendBroadcast(intent);
+                        }
+                    });
+                    musicViewHolder.itemView.findViewById(R.id.music_previous).setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
+                            intent.putExtra("action", KEYCODE_MEDIA_PREVIOUS);
+                            v.getContext().sendBroadcast(intent);
+                        }
+                    });
+                    musicViewHolder.itemView.findViewById(R.id.music_play).setOnClickListener(new OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
+                            intent.putExtra("action", KEYCODE_MEDIA_PLAY_PAUSE);
+                            v.getContext().sendBroadcast(intent);
+                        }
+                    });
                 }
             } else if (holder instanceof WeatherViewHolder) {
                 WeatherViewHolder weatherViewHolder = (WeatherViewHolder) holder;
