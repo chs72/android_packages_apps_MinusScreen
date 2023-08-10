@@ -5,14 +5,15 @@ import static android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE;
 import static android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS;
 
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -25,7 +26,6 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.okcaros.minusscreen.setting.SettingsActivity;
 import com.okcaros.tool.AndroidTool;
 import com.okcaros.tool.PcConst;
 import com.okcaros.tool.ScreenTool;
@@ -38,6 +38,16 @@ public class MinusScreenViewRoot extends ConstraintLayout {
     public static final int TYPE_MAP = 1;
     public static final int TYPE_MUSIC = 2;
     public static final int TYPE_WEATHER = 3;
+    // autonavi broadcast intent
+    public static final String AUTONAVI_STANDARD_BROADCAST_SEND = "AUTONAVI_STANDARD_BROADCAST_SEND";
+    public static final String AUTONAVI_STANDARD_BROADCAST_RECV = "AUTONAVI_STANDARD_BROADCAST_RECV";
+
+    // autonavi package name
+    public static final String AUTONAVI_PACKAGE_NAME = "com.autonavi.amapauto";
+
+    private SpecialAddress specialAddress = null;
+
+    private MapListener mapListener;
 
     // Used to identify whether the widget has been automatically opened When MinusScreen first show.
     boolean initActiveCalled = false;
@@ -151,12 +161,6 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         float wideScreenRatio = 2.5f;
         ScreenTool.ScreenInfo screenInfo = ScreenTool.getScreenInfo(getContext());
         return (float) screenInfo.realWidth / screenInfo.realHeight >= wideScreenRatio;
-    }
-
-    private void openSetting(Context context) {
-        Intent i = new Intent(context, SettingsActivity.class);
-        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(i);
     }
 
     public class AppMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
@@ -279,6 +283,30 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                     @Override
                     public void onClick(View v) {
                         openFreeformApp(TYPE_MAP);
+                    }
+                });
+
+                itemView.findViewById(R.id.map_search).setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        openFreeformApp(TYPE_MAP);
+                        navTo();
+                    }
+                });
+
+                itemView.findViewById(R.id.map_home).setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        openFreeformApp(TYPE_MAP);
+                        navToSpecialAddress(1);
+                    }
+                });
+
+                itemView.findViewById(R.id.map_company).setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        openFreeformApp(TYPE_MAP);
+                        navToSpecialAddress(2);
                     }
                 });
             }
@@ -503,6 +531,121 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         if (appMenuAdapter != null) {
             appMenuAdapter.notifyItemChanged(musicPosition);
         }
+    }
+
+    public class MapListener extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int KEY_TYPE = intent.getIntExtra("KEY_TYPE", 0);
+            switch (KEY_TYPE) {
+                case 10046: {
+                    double lon = intent.getDoubleExtra("LON", 0);
+                    double lat = intent.getDoubleExtra("LAT", 0);
+                    if (Math.abs(lon) + Math.abs(lat) > 1) {
+                        specialAddress = new SpecialAddress(
+                                intent.getStringExtra("POINAME"),
+                                lon,
+                                lat
+                        );
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    public static class SpecialAddress {
+        public String poiName;
+        public double lon;
+        public double lat;
+
+        public SpecialAddress(String poiName, double lon, double lat) {
+            this.poiName = poiName;
+            this.lon = lon;
+            this.lat = lat;
+        }
+    }
+
+    /**
+     * @param aim 1: home 2: company only for autonavi map
+     */
+    private void navToSpecialAddress(int aim) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                registerMapListener();
+                Intent getAddressIntent = new Intent(AUTONAVI_STANDARD_BROADCAST_RECV);
+                getAddressIntent.putExtra("KEY_TYPE", 10045);
+                getAddressIntent.putExtra("EXTRA_TYPE", aim);
+                getAddressIntent.setPackage(AUTONAVI_PACKAGE_NAME);
+                getContext().sendBroadcast(getAddressIntent);
+                specialAddress = null;
+                int i = 0;
+                while (i <= 5) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (Exception e) {
+
+                    }
+                    if (specialAddress != null) {
+                        break;
+                    }
+                    i++;
+                }
+
+                if (specialAddress == null) {
+                    unRegisterMapListener();
+                    return;
+                }
+
+                mapNaviTo(specialAddress.poiName, specialAddress.lon, specialAddress.lat);
+                unRegisterMapListener();
+            }
+        }).start();
+    }
+
+    public void registerMapListener() {
+        unRegisterMapListener();
+        mapListener = new MapListener();
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(AUTONAVI_STANDARD_BROADCAST_SEND);
+        getContext().registerReceiver(mapListener, intentFilter);
+    }
+
+    public void unRegisterMapListener() {
+        try {
+            if (mapListener != null) {
+                getContext().unregisterReceiver(mapListener);
+                mapListener = null;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void navTo() {
+        Intent intent = new Intent();
+        intent.setAction(AUTONAVI_STANDARD_BROADCAST_RECV);
+        intent.putExtra("KEY_TYPE", 10036);
+        intent.putExtra("KEYWORDS", "");
+        intent.putExtra("SOURCE_APP", "VC_CAR");
+        intent.setFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+        intent.setPackage(AUTONAVI_PACKAGE_NAME);
+        getContext().sendBroadcast(intent);
+    }
+
+    private void mapNaviTo(String dName, double lon, double lat) {
+        Intent intent = new Intent();
+        intent.setAction(AUTONAVI_STANDARD_BROADCAST_RECV);
+        intent.putExtra("KEY_TYPE", 10007);
+        intent.putExtra("EXTRA_DNAM", dName);
+        intent.putExtra("EXTRA_DLON", lon);
+        intent.putExtra("EXTRA_DLAT", lat);
+        intent.putExtra("EXTRA_DEV", 0);
+        intent.putExtra("EXTRA_M", -1);
+        intent.setFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+        intent.setPackage(AUTONAVI_PACKAGE_NAME);
+        getContext().sendBroadcast(intent);
     }
 
     public void onStateChange(MinusScreenService.MinusScreenState state) {

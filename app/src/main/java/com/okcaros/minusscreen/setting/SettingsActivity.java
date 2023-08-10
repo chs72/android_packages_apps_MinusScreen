@@ -4,7 +4,6 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MenuItem;
 
 import androidx.appcompat.app.ActionBar;
@@ -54,7 +53,6 @@ public class SettingsActivity extends AppCompatActivity {
             for (ApplicationInfo appInfo : installedAppList) {
                 // 过滤系统应用
                 if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
-                    Log.e("minusscreen", appInfo.packageName);
                     appNames.add(appInfo.loadLabel(packageManager));
                     packageNames.add(appInfo.packageName);
                     appIcons.add(appInfo.loadIcon(packageManager));
