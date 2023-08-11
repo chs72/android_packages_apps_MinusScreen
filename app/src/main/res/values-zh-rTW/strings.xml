@@ -14,4 +14,6 @@
     <string name="freeformAppMap">地圖控件</string>
     <string name="freeformAppMusic">音樂控件</string>
     <string name="freeformAppWeather">天氣控件</string>
+    <string name="noAppTip">沒有可選擇的第三方軟體，請先安裝</string>
+    <string name="confirm">確認</string>
 </resources>

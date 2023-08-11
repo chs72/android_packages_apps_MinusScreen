@@ -17,6 +17,13 @@
             app:useSimpleSummaryProvider="true"
             app:entries="@array/app_names"
             app:entryValues="@array/app_package_names" />
+
+        <ListPreference
+            app:key="@string/preference_key_weather"
+            app:title="@string/freeformAppWeather"
+            app:useSimpleSummaryProvider="true"
+            app:entries="@array/app_names"
+            app:entryValues="@array/app_package_names" />
     </PreferenceCategory>
 
 <!--    <PreferenceCategory app:title="@string/sync_header">-->

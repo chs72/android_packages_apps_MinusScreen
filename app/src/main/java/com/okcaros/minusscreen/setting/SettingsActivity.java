@@ -1,5 +1,6 @@
 package com.okcaros.minusscreen.setting;
 
+import android.app.AlertDialog;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
@@ -59,9 +60,18 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             }
 
+            if (appNames.size() == 0) {
+                AlertDialog.Builder noAppAlert = new AlertDialog.Builder(getContext());
+                noAppAlert.setTitle(getResources().getString(R.string.freeformApp));
+                noAppAlert.setMessage(getResources().getString(R.string.noAppTip));
+                noAppAlert.setPositiveButton(getResources().getString(R.string.confirm), null);
+                noAppAlert.show();
+            }
+
             String[] preferenceKeyList = {
                 getResources().getString(R.string.preference_key_map),
                 getResources().getString(R.string.preference_key_music),
+                getResources().getString(R.string.preference_key_weather)
             };
             for (int i = 0; i < preferenceKeyList.length; i++) {
                 ListPreference appListPreference = findPreference(preferenceKeyList[i]);

@@ -16,4 +16,6 @@
     <string name="freeformAppMap">Map Widget</string>
     <string name="freeformAppMusic">Music Widget</string>
     <string name="freeformAppWeather">Weather Widget</string>
+    <string name="noAppTip">There are no third-party applications to choose from, please install them first</string>
+    <string name="confirm">Confirm</string>
 </resources>

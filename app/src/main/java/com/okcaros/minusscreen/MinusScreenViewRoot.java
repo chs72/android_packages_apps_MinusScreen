@@ -14,6 +14,7 @@ import android.content.pm.PackageManager;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -44,11 +45,9 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
     // autonavi package name
     public static final String AUTONAVI_PACKAGE_NAME = "com.autonavi.amapauto";
-
     private SpecialAddress specialAddress = null;
-
     private MapListener mapListener;
-
+    private boolean isMusicPlay = false;
     // Used to identify whether the widget has been automatically opened When MinusScreen first show.
     boolean initActiveCalled = false;
     private int activeWidgetType = TYPE_MAP;
@@ -226,12 +225,19 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                             v.getContext().sendBroadcast(intent);
                         }
                     });
-                    musicViewHolder.itemView.findViewById(R.id.music_play).setOnClickListener(new OnClickListener() {
+                    musicViewHolder.musicStatus.setOnClickListener(new OnClickListener() {
                         @Override
                         public void onClick(View v) {
                             Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
                             intent.putExtra("action", KEYCODE_MEDIA_PLAY_PAUSE);
                             v.getContext().sendBroadcast(intent);
+
+                            if (isMusicPlay) {
+                                musicViewHolder.musicStatus.setImageResource(R.mipmap.play);
+                            } else {
+                                musicViewHolder.musicStatus.setImageResource(R.mipmap.next);
+                            }
+                            isMusicPlay = !isMusicPlay;
                         }
                     });
                 }
@@ -279,10 +285,14 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             @SuppressLint("ClickableViewAccessibility")
             public MapViewHolder(@NonNull View itemView, @NonNull ViewGroup parent) {
                 super(itemView, parent);
-                itemView.setOnClickListener(new OnClickListener() {
+
+                itemView.setOnTouchListener(new OnTouchListener() {
                     @Override
-                    public void onClick(View v) {
-                        openFreeformApp(TYPE_MAP);
+                    public boolean onTouch(View v, MotionEvent event) {
+                        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                            openFreeformApp(TYPE_MAP);
+                        }
+                        return false;
                     }
                 });
 
@@ -315,17 +325,22 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         public class MusicViewHolder extends BaseViewHolder {
             TextView musicName;
             TextView musicAuthor;
+            ImageView musicStatus;
 
             public MusicViewHolder(@NonNull View itemView, @NonNull ViewGroup parent) {
                 super(itemView, parent);
 
                 musicName = itemView.findViewById(R.id.music_name);
                 musicAuthor = itemView.findViewById(R.id.music_author);
+                musicStatus = itemView.findViewById(R.id.music_play);
 
-                itemView.setOnClickListener(new OnClickListener() {
+                itemView.setOnTouchListener(new OnTouchListener() {
                     @Override
-                    public void onClick(View v) {
-                        openFreeformApp(TYPE_MUSIC);
+                    public boolean onTouch(View v, MotionEvent event) {
+                        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                            openFreeformApp(TYPE_MUSIC);
+                        }
+                        return false;
                     }
                 });
             }
@@ -345,10 +360,14 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 weatherDetail = itemView.findViewById(R.id.weather_detail);
                 location = itemView.findViewById(R.id.weather_location);
 
-                itemView.setOnClickListener(new OnClickListener() {
+
+                itemView.setOnTouchListener(new OnTouchListener() {
                     @Override
-                    public void onClick(View v) {
-                        openFreeformApp(TYPE_WEATHER);
+                    public boolean onTouch(View v, MotionEvent event) {
+                        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                            openFreeformApp(TYPE_WEATHER);
+                        }
+                        return false;
                     }
                 });
             }
