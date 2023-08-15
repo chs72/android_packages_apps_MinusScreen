@@ -481,7 +481,8 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 break;
             }
             case TYPE_WEATHER: {
-
+                pgName = sharedConfig.getString(getResources().getString(R.string.preference_key_weather), "");
+                break;
             }
         }
 
