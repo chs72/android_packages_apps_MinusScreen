@@ -1,5 +1,7 @@
 plugins {
     alias(libs.plugins.androidApplication)
+    id("com.google.devtools.ksp")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -71,4 +73,12 @@ dependencies {
     androidTestImplementation libs.espresso.core
 
     implementation("org.greenrobot:eventbus:3.3.1")
+
+    implementation("com.google.dagger:hilt-android:2.44")
+    ksp("com.google.dagger:hilt-android-compiler:2.44")
 }
+
+//// Allow references to generated code
+//kapt {
+//    correctErrorTypes = true
+//}

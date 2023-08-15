@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">minusscreen</string>
+    <string name="app_name">MinusScreen</string>
     <string name="navigation">导航</string>
     <string name="music">音乐</string>
     <string name="weather">天气</string>
