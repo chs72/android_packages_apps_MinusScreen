@@ -65,13 +65,13 @@ public class MinusScreenService extends Service {
     private MinusScreenState minusScreenState = MinusScreenState.Hide;
 
     private void addMinusScreenView() {
+
         if (parentWindowToken == null) {
             Log.e(Tag, "addMinusScreenView failed, parentWindowToken is NULL");
             return;
         }
         ScreenTool.ScreenInfo screenInfo = ScreenTool.getScreenInfo(getApplicationContext());
         screenW = screenInfo.realWidth;
-
         minusScreenViewRoot = new MinusScreenViewRoot(this);
         minusScreenViewRoot.setCallback(new MinusScreenAgentCallback() {
             @Override
@@ -112,7 +112,7 @@ public class MinusScreenService extends Service {
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
                 WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS |
                 WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION;
-        mRootContainerLp.x = -screenW;
+        mRootContainerLp.x = 0;
         mRootContainerLp.format = PixelFormat.TRANSLUCENT;
         minusScreenViewRoot.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
 
