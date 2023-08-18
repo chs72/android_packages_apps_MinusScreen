@@ -16,4 +16,5 @@
     <string name="freeformAppWeather">天氣控件</string>
     <string name="noAppTip">沒有可選擇的第三方軟體，請先安裝</string>
     <string name="confirm">確認</string>
+    <string name="humidity">濕度等級</string>
 </resources>

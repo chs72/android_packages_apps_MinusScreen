@@ -27,14 +27,21 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import com.google.android.libraries.launcherclient.ILauncherOverlay;
 import com.google.android.libraries.launcherclient.ILauncherOverlayCallback;
 import com.okcaros.minusscreen.setting.SettingsActivity;
+import com.okcaros.minusscreen.singleton.data.DataManager;
+import com.okcaros.minusscreen.singleton.data.DataManagerServiceHelper;
 import com.okcaros.tool.AndroidTool;
 import com.okcaros.tool.ScreenTool;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.inject.Inject;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
+@AndroidEntryPoint
 public class MinusScreenService extends Service {
     private final static String Tag = "MinusScreenService";
     private final static float MinSwipeRatio = 0.1F;
@@ -63,6 +70,11 @@ public class MinusScreenService extends Service {
     private MainReceiver mainReceiver;
 
     private MinusScreenState minusScreenState = MinusScreenState.Hide;
+
+    @Inject
+    DataManager dataManager;
+
+    DataManagerServiceHelper dataManagerServiceHelper;
 
     private void addMinusScreenView() {
 
@@ -210,6 +222,10 @@ public class MinusScreenService extends Service {
 
         mainReceiver = new MainReceiver();
         mainReceiver.register(this);
+
+        dataManagerServiceHelper = new DataManagerServiceHelper(this, dataManager);
+
+        dataManagerServiceHelper.onCreate();
     }
 
     @Override
@@ -218,6 +234,8 @@ public class MinusScreenService extends Service {
         EventBus.getDefault().unregister(this);
 
         unregisterReceiver(mainReceiver);
+
+        dataManagerServiceHelper.onDestroy();
     }
 
     @Nullable
@@ -423,6 +441,13 @@ public class MinusScreenService extends Service {
                     event.data.getArtist(),
                     event.data.getDuration()
             );
+        }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void OnWeatherChangeEvent(DataManagerServiceHelper.OnWeatherChangeEvent event) {
+        if (minusScreenViewRoot != null) {
+            minusScreenViewRoot.onWeatherChange(event.weather);
         }
     }
 

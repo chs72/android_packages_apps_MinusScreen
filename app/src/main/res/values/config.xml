@@ -3,4 +3,6 @@
     <string name="preference_key_map" translatable="false">freeformAppMap</string>
     <string name="preference_key_music" translatable="false">freeformAppMusic</string>
     <string name="preference_key_weather" translatable="false">freeformAppWeather</string>
+    <string name="request_header_key" translatable="false">tsss</string>
+    <string name="request_header_value" translatable="false">-okcaros-!_+_!-soracko-</string>
 </resources>

@@ -18,4 +18,5 @@
     <string name="freeformAppWeather">Weather Widget</string>
     <string name="noAppTip">There are no third-party applications to choose from, please install them first</string>
     <string name="confirm">Confirm</string>
+    <string name="humidity">Humidity</string>
 </resources>

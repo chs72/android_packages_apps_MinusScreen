@@ -27,12 +27,17 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.okcaros.minusscreen.api.model.Weather;
+import com.okcaros.minusscreen.singleton.data.DataManagerServiceHelper;
 import com.okcaros.tool.AndroidTool;
 import com.okcaros.tool.PcConst;
 import com.okcaros.tool.ScreenTool;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class MinusScreenViewRoot extends ConstraintLayout {
     private final static String Tag = "MinusScreenViewRoot";
@@ -235,7 +240,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                             if (isMusicPlay) {
                                 musicViewHolder.musicStatus.setImageResource(R.mipmap.play);
                             } else {
-                                musicViewHolder.musicStatus.setImageResource(R.mipmap.next);
+                                musicViewHolder.musicStatus.setImageResource(R.mipmap.pause);
                             }
                             isMusicPlay = !isMusicPlay;
                         }
@@ -243,10 +248,17 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 }
             } else if (holder instanceof WeatherViewHolder) {
                 WeatherViewHolder weatherViewHolder = (WeatherViewHolder) holder;
+                Object data = dataList.get(position).getData();
 
-                weatherViewHolder.temperature.setText("30°");
-                weatherViewHolder.weatherDetail.setText("多云");
-                weatherViewHolder.location.setText("杭州市萧山区");
+                if (data instanceof Weather) {
+                    Weather weather = (Weather) data;
+                    if (weather.weather != null) {
+                        weatherViewHolder.temperature.setText((int) weather.temperature + "°");
+                        weatherViewHolder.weatherDetail.setText(weather.weather);
+                        weatherViewHolder.humidity.setText(getResources().getString(R.string.humidity) + (int) weather.humidity);
+                        weatherViewHolder.weatherIcon.setImageResource(getWeatherImg(weather.zhWeather));
+                    }
+                }
             }
         }
 
@@ -350,7 +362,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             ImageView weatherIcon;
             TextView temperature;
             TextView weatherDetail;
-            TextView location;
+            TextView humidity;
 
             public WeatherViewHolder(@NonNull View itemView, @NonNull ViewGroup parent) {
                 super(itemView, parent);
@@ -358,14 +370,15 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 weatherIcon = itemView.findViewById(R.id.weather_icon);
                 temperature = itemView.findViewById(R.id.weather_temperature);
                 weatherDetail = itemView.findViewById(R.id.weather_detail);
-                location = itemView.findViewById(R.id.weather_location);
+                humidity = itemView.findViewById(R.id.weather_humidity);
 
-
+                Weather weather = (Weather) dataList.get(2).getData();
                 itemView.setOnTouchListener(new OnTouchListener() {
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
                         if (event.getAction() == MotionEvent.ACTION_DOWN) {
                             openFreeformApp(TYPE_WEATHER);
+                            EventBus.getDefault().post(new DataManagerServiceHelper.ManualRefreshWeather());
                         }
                         return false;
                     }
@@ -382,7 +395,10 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             this.type = type;
 
             switch (type) {
-                case TYPE_WEATHER:
+                case TYPE_WEATHER: {
+                    this.data = new Weather();
+                    break;
+                }
                 case TYPE_MAP: {
                     break;
                 }
@@ -551,6 +567,143 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         if (appMenuAdapter != null) {
             appMenuAdapter.notifyItemChanged(musicPosition);
         }
+    }
+
+    public void onWeatherChange(Weather weather) {
+        int weatherPosition = -1;
+        for (MenuAppEntity entity : dataList) {
+            weatherPosition++;
+            if (entity.getType() != TYPE_WEATHER) {
+                continue;
+            }
+
+            Weather data = (Weather) entity.getData();
+            data.setHumidity(weather.humidity);
+            data.setTemperature(weather.temperature);
+            data.setWeather(getLanguage().equals("zh") ? weather.zhWeather : weather.weather);
+            data.setZhWeather(weather.zhWeather);
+            break;
+        }
+        if (appMenuAdapter != null) {
+            appMenuAdapter.notifyItemChanged(weatherPosition);
+        }
+    }
+
+    private static String getLanguage() {
+        Locale locale = Locale.getDefault();
+        return locale.getLanguage();
+    }
+
+    private static int getWeatherImg(String weather) {
+        switch (weather) {
+            case "晴": {
+                return R.mipmap.wea_clear;
+            }
+            case "少云": {
+                return R.mipmap.wea_cloud;
+            }
+            case "晴间多云": {
+                return R.mipmap.wea_clear_cloud;
+            }
+            case "多云": {
+                return R.mipmap.wea_cloud;
+            }
+            case "阴": {
+                return R.mipmap.wea_overcast;
+            }
+            case "有风":
+            case "平静":
+            case "微风":
+            case "和风":
+            case "清风": {
+                return R.mipmap.wea_breeze;
+            }
+            case "强风/劲风":
+            case "疾风":
+            case "大风":
+            case "烈风":
+            case "风暴":
+            case "狂爆风":
+            case "飓风":
+            case "热带风暴": {
+                return R.mipmap.wea_gale;
+            }
+            case "霾":
+            case "中度霾":
+            case "重度霾":
+            case "严重霾": {
+                return R.mipmap.wea_smog;
+            }
+            case "阵雨":
+            case "雷阵雨": {
+                return R.mipmap.wea_rain;
+            }
+            case "雷阵雨并伴有冰雹": {
+                return R.mipmap.wea_rain_hail;
+            }
+            case "小雨":
+            case "中雨":
+            case "大雨":
+            case "暴雨":
+            case "大暴雨":
+            case "特大暴雨":
+            case "强阵雨":
+            case "强雷阵雨":
+            case "极端降雨":
+            case "毛毛雨/细雨":
+            case "雨":
+            case "小雨-中雨":
+            case "中雨-大雨":
+            case "大雨-暴雨":
+            case "暴雨-大暴雨":
+            case "大暴雨-特大暴雨": {
+                return R.mipmap.wea_rain;
+            }
+            case "雨雪天气":
+            case "雨夹雪":
+            case "阵雨夹雪": {
+                return R.mipmap.wea_rain_snow;
+            }
+            case "冻雨": {
+                return R.mipmap.wea_rain;
+            }
+
+            case "雪":
+            case "阵雪":
+            case "小雪":
+            case "中雪":
+            case "大雪":
+            case "暴雪":
+            case "小雪-中雪":
+            case "中雪-大雪":
+            case "大雪-暴雪": {
+                return R.mipmap.wea_snow;
+            }
+            case "浮尘":
+            case "扬沙":
+            case "沙尘暴":
+            case "强沙尘暴": {
+                return R.mipmap.wea_sand_dust;
+            }
+            case "龙卷风": {
+                return R.mipmap.wea_gale;
+            }
+            case "雾":
+            case "浓雾":
+            case "强浓雾":
+            case "轻雾":
+            case "大雾":
+            case "特强浓雾": {
+                return R.mipmap.wea_sand_dust;
+            }
+            case "热": {
+                return R.mipmap.wea_clear;
+            }
+            case "冷": {
+                return R.mipmap.wea_snow;
+            }
+        }
+        return R.mipmap.wea_clear;
     }
 
     public class MapListener extends BroadcastReceiver {
