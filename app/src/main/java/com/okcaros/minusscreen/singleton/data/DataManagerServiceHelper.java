@@ -1,5 +1,6 @@
 package com.okcaros.minusscreen.singleton.data;
 
+import android.os.SystemClock;
 import android.util.Log;
 
 import com.alibaba.fastjson.JSON;
@@ -16,6 +17,7 @@ import org.greenrobot.eventbus.Subscribe;
 import java.io.IOException;
 
 import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.functions.Function;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import okhttp3.Interceptor;
@@ -96,21 +98,21 @@ public class DataManagerServiceHelper {
      */
     @Subscribe
     public void ManualRefreshWeather(ManualRefreshWeather event) {
-        long currentTime = System.currentTimeMillis();
+        long currentTime = SystemClock.uptimeMillis();
 
         if (currentTime - lastExecutionTime >= THIRTY_MINUTES) {
-            updateWeather()
+            Disposable d = updateWeather()
                     .subscribeOn(Schedulers.io())
                     .subscribe(
                             s -> {
-
+                                lastExecutionTime = currentTime;
+                                OLog.d(DataManagerServiceHelperTag, "updateWeather success");
                             },
                             error -> {
                                 OLog.e(DataManagerServiceHelperTag, "updateWeather error when ManualRefreshWeather");
                                 OLog.e(DataManagerServiceHelperTag, error);
                             }
                     );
-            lastExecutionTime = currentTime;
         }
     }
 

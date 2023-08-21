@@ -255,7 +255,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                     if (weather.weather != null) {
                         weatherViewHolder.temperature.setText((int) weather.temperature + "°");
                         weatherViewHolder.weatherDetail.setText(weather.weather);
-                        weatherViewHolder.humidity.setText(getResources().getString(R.string.humidity) + (int) weather.humidity);
+                        weatherViewHolder.humidity.setText(getResources().getString(R.string.humidity) + (int) weather.humidity + "%");
                         weatherViewHolder.weatherIcon.setImageResource(getWeatherImg(weather.zhWeather));
                     }
                 }
