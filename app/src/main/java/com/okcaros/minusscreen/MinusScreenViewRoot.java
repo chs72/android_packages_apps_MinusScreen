@@ -27,6 +27,7 @@ import androidx.preference.PreferenceManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.alibaba.fastjson.JSON;
 import com.okcaros.minusscreen.api.model.Weather;
 import com.okcaros.minusscreen.singleton.data.DataManagerServiceHelper;
 import com.okcaros.tool.AndroidTool;
@@ -59,6 +60,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
     private MinusScreenService.MinusScreenAgentCallback callback;
     private final List<MenuAppEntity> dataList = new ArrayList<>();
     private final AppMenuAdapter appMenuAdapter;
+    private SharedPreferences sharedConfig;
 
     public MinusScreenViewRoot(@NonNull Context context) {
         super(context);
@@ -128,6 +130,8 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 callback.configApp();
             }
         });
+
+        sharedConfig = PreferenceManager.getDefaultSharedPreferences(getContext());
     }
 
     public MinusScreenViewRoot(@NonNull Context context, @Nullable AttributeSet attrs) {
@@ -251,13 +255,21 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 Object data = dataList.get(position).getData();
 
                 if (data instanceof Weather) {
-                    Weather weather = (Weather) data;
-                    if (weather.weather != null) {
-                        weatherViewHolder.temperature.setText((int) weather.temperature + "°");
-                        weatherViewHolder.weatherDetail.setText(weather.weather);
-                        weatherViewHolder.humidity.setText(getResources().getString(R.string.humidity) + (int) weather.humidity + "%");
-                        weatherViewHolder.weatherIcon.setImageResource(getWeatherImg(weather.zhWeather));
+                    if (sharedConfig == null) {
+                        return;
                     }
+                    String json = sharedConfig.getString("weather", null);
+
+                    if (json != null) {
+                        Weather weather = JSON.parseObject(json, Weather.class);
+                        if (weather.weather != null) {
+                            weatherViewHolder.temperature.setText((int) weather.temperature + "°");
+                            weatherViewHolder.weatherDetail.setText(weather.weather);
+                            weatherViewHolder.humidity.setText(getResources().getString(R.string.humidity) + (int) weather.humidity + "%");
+                            weatherViewHolder.weatherIcon.setImageResource(getWeatherImg(weather.zhWeather));
+                        }
+                    }
+
                 }
             }
         }
@@ -372,7 +384,6 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 weatherDetail = itemView.findViewById(R.id.weather_detail);
                 humidity = itemView.findViewById(R.id.weather_humidity);
 
-                Weather weather = (Weather) dataList.get(2).getData();
                 itemView.setOnTouchListener(new OnTouchListener() {
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
@@ -485,7 +496,6 @@ public class MinusScreenViewRoot extends ConstraintLayout {
     private void openFreeformApp(int wType) {
         activeWidgetType = wType;
 
-        SharedPreferences sharedConfig = PreferenceManager.getDefaultSharedPreferences(getContext());
         String pgName = "";
         switch (wType) {
             case TYPE_MAP: {
@@ -582,6 +592,9 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             data.setTemperature(weather.temperature);
             data.setWeather(getLanguage().equals("zh") ? weather.zhWeather : weather.weather);
             data.setZhWeather(weather.zhWeather);
+            SharedPreferences.Editor editor = sharedConfig.edit();
+            editor.putString("weather", JSON.toJSONString(data));
+            editor.commit();
             break;
         }
         if (appMenuAdapter != null) {
@@ -825,6 +838,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         if (state == MinusScreenService.MinusScreenState.SHOW && (callback.needResumeFreeformWindow() || !initActiveCalled)) {
             openFreeformApp(activeWidgetType);
             initActiveCalled = true;
+            EventBus.getDefault().post(new DataManagerServiceHelper.ManualRefreshWeather());
         }
     }
 }
