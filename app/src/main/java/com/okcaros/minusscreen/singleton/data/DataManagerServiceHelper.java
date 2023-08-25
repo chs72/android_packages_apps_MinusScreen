@@ -1,7 +1,6 @@
 package com.okcaros.minusscreen.singleton.data;
 
 import android.os.SystemClock;
-import android.util.Log;
 
 import com.alibaba.fastjson.JSON;
 import com.okcaros.minusscreen.MinusScreenService;
@@ -33,7 +32,7 @@ public class DataManagerServiceHelper {
     public DataManager dataManager;
     private Retrofit retrofit;
     private WebserviceApi webserviceApi;
-    private long lastExecutionTime = 0;
+    private long lastWeatherGotTime = 0;
     private static final long THIRTY_MINUTES = 30 * 60 * 1000; // 30 minutes in milliseconds
     public DataManagerServiceHelper(MinusScreenService minusScreenService, DataManager dataManager) {
         this.minusScreenService = minusScreenService;
@@ -75,7 +74,7 @@ public class DataManagerServiceHelper {
                 .getWeatherInfo()
                 .map(new Function<Weather, Weather>() {
                     @Override
-                    public Weather apply(Weather weather) throws Throwable {
+                    public Weather apply(Weather weather) {
                         String prevWeatherStr = dataManager.getWeather() == null ? "" : JSON.toJSONString(dataManager.getWeather());
                         String nowWeatherStr = JSON.toJSONString(weather);
                         dataManager.setWeather(weather);
@@ -100,12 +99,12 @@ public class DataManagerServiceHelper {
     public void ManualRefreshWeather(ManualRefreshWeather event) {
         long currentTime = SystemClock.uptimeMillis();
 
-        if (currentTime - lastExecutionTime >= THIRTY_MINUTES) {
+        if (lastWeatherGotTime == 0 || currentTime - lastWeatherGotTime >= THIRTY_MINUTES) {
             Disposable d = updateWeather()
                     .subscribeOn(Schedulers.io())
                     .subscribe(
                             s -> {
-                                lastExecutionTime = currentTime;
+                                lastWeatherGotTime = currentTime;
                                 OLog.d(DataManagerServiceHelperTag, "updateWeather success");
                             },
                             error -> {
