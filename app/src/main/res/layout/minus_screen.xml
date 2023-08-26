@@ -34,19 +34,17 @@
             <ImageView
                 android:layout_width="@dimen/dp_137"
                 android:layout_height="@dimen/dp_111"
-                android:background="@mipmap/empty_app"/>
+                android:background="@mipmap/empty_app" />
+
             <Button
                 android:id="@+id/config_btn"
-                android:background="@drawable/setting_btn_bg"
                 android:layout_width="wrap_content"
-                android:layout_height="@dimen/dp_24"
-                android:minHeight="@dimen/dp_0"
+                android:layout_height="@dimen/sp_28"
+                android:background="@drawable/setting_btn_bg"
+                android:paddingHorizontal="@dimen/sp_28"
+                android:text="@string/click_to_setting"
                 android:textColor="@color/setting_btn"
-                android:textSize="@dimen/sp_11"
-                android:paddingHorizontal="@dimen/dp_30"
-                android:text="@string/click_to_setting" />
-
-
+                android:textSize="@dimen/sp_12" />
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
