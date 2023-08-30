@@ -37,6 +37,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -439,8 +440,16 @@ public class MinusScreenService extends Service {
                     event.data.getTitle(),
                     event.data.getAlbumTitle(),
                     event.data.getArtist(),
-                    event.data.getDuration()
+                    event.data.getDuration(),
+                    event.data.getState()
             );
+        }
+    }
+
+    @Subscribe()
+    public void onMediaInfo(EventBusEvent.MediaThumbInfo event) {
+        if (minusScreenViewRoot != null) {
+            minusScreenViewRoot.onMediaThumbChange(event.data);
         }
     }
 

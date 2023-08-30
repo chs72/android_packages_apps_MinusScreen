@@ -11,6 +11,15 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
+import android.graphics.RectF;
+import android.media.session.PlaybackState;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -205,6 +214,40 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             return viewHolder;
         }
 
+        public Bitmap getRoundedCornerBitmap(Bitmap bitmap, float radiusRadio) {
+            Bitmap output = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(output);
+
+            final int color = 0xff424242;
+            final Paint paint = new Paint();
+            final Rect rect = new Rect(0, 0, bitmap.getWidth(), bitmap.getHeight());
+            final RectF rectF = new RectF(rect);
+
+            int radius = (int) (bitmap.getWidth() * radiusRadio);
+
+            paint.setAntiAlias(true);
+            canvas.drawARGB(0, 0, 0, 0);
+            paint.setColor(color);
+            canvas.drawRoundRect(rectF, radius, radius, paint);
+
+            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
+            canvas.drawBitmap(bitmap, rect, rect, paint);
+
+            return output;
+        }
+
+        private void renderBitmapToImageView(ImageView imageView, byte[] bitmapData) {
+            if (bitmapData == null) {
+                return;
+            }
+            try {
+                Bitmap receivedBitmap = BitmapFactory.decodeByteArray(bitmapData, 0, bitmapData.length);
+                imageView.setImageBitmap(getRoundedCornerBitmap(receivedBitmap, 0.15f));
+            } catch (Throwable e) {
+                Log.e(Tag, e.getMessage());
+            }
+        }
+
         @Override
         public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
             if (holder instanceof MapViewHolder) {
@@ -217,6 +260,17 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                     MenuAppEntity.MediaMenuEntityData mediaData = (MenuAppEntity.MediaMenuEntityData) data;
                     musicViewHolder.musicName.setText(mediaData.getTitle());
                     musicViewHolder.musicAuthor.setText(mediaData.getArtist());
+
+                    if (mediaData.getState() == PlaybackState.STATE_PLAYING) {
+                        isMusicPlay = true;
+                        musicViewHolder.musicStatus.setImageResource(R.mipmap.pause);
+                    } else {
+                        isMusicPlay = false;
+                        musicViewHolder.musicStatus.setImageResource(R.mipmap.play);
+                    }
+
+                    ImageView thumbImgView = musicViewHolder.itemView.findViewById(R.id.music_thumb_icon);
+                    renderBitmapToImageView(thumbImgView, mediaData.getThumbData());
 
                     musicViewHolder.itemView.findViewById(R.id.music_next).setOnClickListener(new OnClickListener() {
                         @Override
@@ -245,8 +299,8 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                                 musicViewHolder.musicStatus.setImageResource(R.mipmap.play);
                             } else {
                                 musicViewHolder.musicStatus.setImageResource(R.mipmap.pause);
+
                             }
-                            isMusicPlay = !isMusicPlay;
                         }
                     });
                 }
@@ -443,6 +497,10 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
             private int duration = 0;
 
+            private int state = PlaybackState.STATE_STOPPED;
+
+            private byte[] thumbData = null;
+
             public MediaMenuEntityData() {
 
             }
@@ -451,12 +509,14 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                     String title,
                     String albumTitle,
                     String artist,
-                    int duration
+                    int duration,
+                    int state
             ) {
                 this.artist = artist;
                 this.albumTitle = albumTitle;
                 this.title = title;
                 this.duration = duration;
+                this.state = state;
             }
 
             public String getTitle() {
@@ -469,6 +529,10 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
             public String getAlbumTitle() {
                 return albumTitle;
+            }
+
+            public byte[] getThumbData() {
+                return thumbData;
             }
 
             public void setAlbumTitle(String albumTitle) {
@@ -489,6 +553,18 @@ public class MinusScreenViewRoot extends ConstraintLayout {
 
             public void setDuration(int duration) {
                 this.duration = duration;
+            }
+
+            public void setThumbData(byte[] thumbData) {
+                this.thumbData = thumbData;
+            }
+
+            public int getState() {
+                return state;
+            }
+
+            public void setState(int state) {
+                this.state = state;
             }
         }
     }
@@ -544,13 +620,13 @@ public class MinusScreenViewRoot extends ConstraintLayout {
         getContext().sendBroadcast(intent);
     }
 
-    private boolean isAppInstalled(String packageName){
+    private boolean isAppInstalled(String packageName) {
         PackageManager pm = getContext().getPackageManager();
         boolean installed = false;
         try {
             pm.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES);
             installed = true;
-        } catch (PackageManager.NameNotFoundException e){
+        } catch (PackageManager.NameNotFoundException e) {
             installed = false;
         }
         return installed;
@@ -559,7 +635,8 @@ public class MinusScreenViewRoot extends ConstraintLayout {
     public void onMediaInfoChange(String title,
                                   String albumTitle,
                                   String artist,
-                                  int duration) {
+                                  int duration,
+                                  int state) {
 
         int musicPosition = -1;
         for (MenuAppEntity entity : dataList) {
@@ -571,7 +648,24 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             data.setArtist(artist);
             data.setAlbumTitle(albumTitle);
             data.setTitle(title);
+            data.setState(state);
             data.setDuration(duration);
+            break;
+        }
+        if (appMenuAdapter != null) {
+            appMenuAdapter.notifyItemChanged(musicPosition);
+        }
+    }
+
+    public void onMediaThumbChange(byte[] thumbData) {
+        int musicPosition = -1;
+        for (MenuAppEntity entity : dataList) {
+            musicPosition++;
+            if (entity.getType() != TYPE_MUSIC) {
+                continue;
+            }
+            MenuAppEntity.MediaMenuEntityData data = (MenuAppEntity.MediaMenuEntityData) entity.getData();
+            data.setThumbData(thumbData);
             break;
         }
         if (appMenuAdapter != null) {

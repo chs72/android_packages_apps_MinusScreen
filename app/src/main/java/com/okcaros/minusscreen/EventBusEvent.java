@@ -8,4 +8,12 @@ public class EventBusEvent {
             this.data = data;
         }
     }
+
+    public static class MediaThumbInfo {
+        public byte[] data;
+
+        public MediaThumbInfo(byte[] data) {
+            this.data = data;
+        }
+    }
 }
