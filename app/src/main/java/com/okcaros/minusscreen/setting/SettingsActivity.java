@@ -3,13 +3,14 @@ package com.okcaros.minusscreen.setting;
 import android.app.AlertDialog;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.MenuItem;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.ListPreference;
+import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
 
 import com.okcaros.minusscreen.R;
@@ -43,22 +44,19 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     public static class SettingsFragment extends PreferenceFragmentCompat {
+        List<CharSequence> appNames = new ArrayList<>();
+        List<CharSequence> packageNames = new ArrayList<>();
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.setting_preferences, rootKey);
 
-            List<CharSequence> appNames = new ArrayList<>();
-            List<CharSequence> packageNames = new ArrayList<>();
-            List<Drawable> appIcons = new ArrayList<>();
+            String[] preferenceKeyList = {
+                    getResources().getString(R.string.preference_key_map),
+                    getResources().getString(R.string.preference_key_music),
+                    getResources().getString(R.string.preference_key_weather)
+            };
 
-            for (ApplicationInfo appInfo : installedAppList) {
-                // 过滤系统应用
-                if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
-                    appNames.add(appInfo.loadLabel(packageManager));
-                    packageNames.add(appInfo.packageName);
-                    appIcons.add(appInfo.loadIcon(packageManager));
-                }
-            }
+            getInstalledAppList();
 
             if (appNames.size() == 0) {
                 AlertDialog.Builder noAppAlert = new AlertDialog.Builder(getContext());
@@ -68,15 +66,32 @@ public class SettingsActivity extends AppCompatActivity {
                 noAppAlert.show();
             }
 
-            String[] preferenceKeyList = {
-                getResources().getString(R.string.preference_key_map),
-                getResources().getString(R.string.preference_key_music),
-                getResources().getString(R.string.preference_key_weather)
-            };
             for (int i = 0; i < preferenceKeyList.length; i++) {
                 ListPreference appListPreference = findPreference(preferenceKeyList[i]);
-                appListPreference.setEntries(appNames.toArray(new CharSequence[0]));
-                appListPreference.setEntryValues(packageNames.toArray(new CharSequence[0]));
+                appListPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(@NonNull Preference preference) {
+                        getInstalledAppList();
+
+                        appListPreference.setEntries(appNames.toArray(new CharSequence[0]));
+                        appListPreference.setEntryValues(packageNames.toArray(new CharSequence[0]));
+                        return false;
+                    }
+                });
+            }
+        }
+
+        public void getInstalledAppList() {
+            installedAppList = packageManager.getInstalledApplications(0);
+
+            appNames.clear();
+            packageNames.clear();
+            for (ApplicationInfo appInfo : installedAppList) {
+                // 过滤系统应用
+                if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+                    appNames.add(appInfo.loadLabel(packageManager));
+                    packageNames.add(appInfo.packageName);
+                }
             }
         }
     }
