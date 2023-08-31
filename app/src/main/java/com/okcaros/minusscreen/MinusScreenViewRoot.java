@@ -92,6 +92,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             viewRoot.setPadding(screenInfo.navBarSize, 0, 0, 0);
         }
         RecyclerView appMenuRcv = findViewById(R.id.app_menu_rcv);
+        appMenuRcv.setItemAnimator(null); // Fix the problem that background flashes when data is changed
 
         View appContent = findViewById(R.id.app_content);
         ConstraintLayout.LayoutParams appContentLp = (ConstraintLayout.LayoutParams) appContent.getLayoutParams();
