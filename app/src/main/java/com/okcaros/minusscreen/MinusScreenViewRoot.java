@@ -343,20 +343,19 @@ public class MinusScreenViewRoot extends ConstraintLayout {
             public BaseViewHolder(@NonNull View itemView, @NonNull ViewGroup parent) {
                 super(itemView);
 
-                int parentHeight = parent.getMeasuredHeight();
                 ScreenTool.ScreenInfo screenInfo = ScreenTool.getScreenInfo(getContext());
                 if (isVerticalScreen()) {
-                    itemView.getLayoutParams().width = (int) ((parent.getMeasuredWidth() - 2 * getResources().getDimensionPixelSize(R.dimen.dp_8)) / 2);
+                    itemView.getLayoutParams().width = (int) ((screenInfo.realWidth - 2 * getResources().getDimensionPixelSize(R.dimen.dp_8)) / 2);
                     return;
                 }
 
                 if (isWideScreen()) {
-                    itemView.getLayoutParams().height = (int) ((parentHeight - 2 * getResources().getDimensionPixelSize(R.dimen.dp_8) - screenInfo.statusBarSize) / 2);
+                    itemView.getLayoutParams().height = (int) ((screenInfo.realHeight - 2 * getResources().getDimensionPixelSize(R.dimen.dp_8) - screenInfo.statusBarSize) / 2);
                     return;
                 }
 
                 // normal screen
-                itemView.getLayoutParams().height = (int) ((parentHeight - 3 * getResources().getDimensionPixelSize(R.dimen.dp_8) - screenInfo.statusBarSize) / 3);
+                itemView.getLayoutParams().height = (int) ((screenInfo.realHeight - 3 * getResources().getDimensionPixelSize(R.dimen.dp_8) - screenInfo.statusBarSize) / 3);
             }
         }
 
