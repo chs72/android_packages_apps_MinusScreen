@@ -273,25 +273,27 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                     ImageView thumbImgView = musicViewHolder.itemView.findViewById(R.id.music_thumb_icon);
                     renderBitmapToImageView(thumbImgView, mediaData.getThumbData());
 
-                    musicViewHolder.itemView.findViewById(R.id.music_next).setOnClickListener(new OnClickListener() {
+                    musicViewHolder.itemView.findViewById(R.id.music_next).setOnTouchListener(new OnTouchListener() {
                         @Override
-                        public void onClick(View v) {
+                        public boolean onTouch(View v, MotionEvent event) {
                             Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
                             intent.putExtra("action", KEYCODE_MEDIA_NEXT);
                             v.getContext().sendBroadcast(intent);
+                            return false;
                         }
                     });
-                    musicViewHolder.itemView.findViewById(R.id.music_previous).setOnClickListener(new OnClickListener() {
+                    musicViewHolder.itemView.findViewById(R.id.music_previous).setOnTouchListener(new OnTouchListener() {
                         @Override
-                        public void onClick(View v) {
+                        public boolean onTouch(View v, MotionEvent event) {
                             Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
                             intent.putExtra("action", KEYCODE_MEDIA_PREVIOUS);
                             v.getContext().sendBroadcast(intent);
+                            return false;
                         }
                     });
-                    musicViewHolder.musicStatus.setOnClickListener(new OnClickListener() {
+                    musicViewHolder.musicStatus.setOnTouchListener(new OnTouchListener() {
                         @Override
-                        public void onClick(View v) {
+                        public boolean onTouch(View v, MotionEvent event) {
                             Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
                             intent.putExtra("action", KEYCODE_MEDIA_PLAY_PAUSE);
                             v.getContext().sendBroadcast(intent);
@@ -302,6 +304,7 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                                 musicViewHolder.musicStatus.setImageResource(R.mipmap.pause);
 
                             }
+                            return false;
                         }
                     });
                 }
@@ -374,27 +377,30 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                     }
                 });
 
-                itemView.findViewById(R.id.map_search).setOnClickListener(new OnClickListener() {
+                itemView.findViewById(R.id.map_search).setOnTouchListener(new OnTouchListener() {
                     @Override
-                    public void onClick(View v) {
+                    public boolean onTouch(View v, MotionEvent event) {
                         openFreeformApp(TYPE_MAP);
                         navTo();
+                        return false;
                     }
                 });
 
-                itemView.findViewById(R.id.map_home).setOnClickListener(new OnClickListener() {
+                itemView.findViewById(R.id.map_home).setOnTouchListener(new OnTouchListener() {
                     @Override
-                    public void onClick(View v) {
+                    public boolean onTouch(View v, MotionEvent event) {
                         openFreeformApp(TYPE_MAP);
                         navToSpecialAddress(1);
+                        return false;
                     }
                 });
 
-                itemView.findViewById(R.id.map_company).setOnClickListener(new OnClickListener() {
+                itemView.findViewById(R.id.map_company).setOnTouchListener(new OnTouchListener() {
                     @Override
-                    public void onClick(View v) {
+                    public boolean onTouch(View v, MotionEvent event) {
                         openFreeformApp(TYPE_MAP);
                         navToSpecialAddress(2);
+                        return false;
                     }
                 });
             }
