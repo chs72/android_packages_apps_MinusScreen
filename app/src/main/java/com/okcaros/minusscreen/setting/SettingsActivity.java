@@ -68,6 +68,9 @@ public class SettingsActivity extends AppCompatActivity {
 
             for (int i = 0; i < preferenceKeyList.length; i++) {
                 ListPreference appListPreference = findPreference(preferenceKeyList[i]);
+
+                appListPreference.setEntries(appNames.toArray(new CharSequence[0]));
+                appListPreference.setEntryValues(packageNames.toArray(new CharSequence[0]));
                 appListPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(@NonNull Preference preference) {
