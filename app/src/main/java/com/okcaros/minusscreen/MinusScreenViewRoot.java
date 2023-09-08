@@ -276,34 +276,41 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                     musicViewHolder.itemView.findViewById(R.id.music_next).setOnTouchListener(new OnTouchListener() {
                         @Override
                         public boolean onTouch(View v, MotionEvent event) {
-                            Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
-                            intent.putExtra("action", KEYCODE_MEDIA_NEXT);
-                            v.getContext().sendBroadcast(intent);
+                            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                                Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
+                                intent.putExtra("action", KEYCODE_MEDIA_NEXT);
+                                v.getContext().sendBroadcast(intent);
+                            }
                             return false;
                         }
                     });
                     musicViewHolder.itemView.findViewById(R.id.music_previous).setOnTouchListener(new OnTouchListener() {
                         @Override
                         public boolean onTouch(View v, MotionEvent event) {
-                            Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
-                            intent.putExtra("action", KEYCODE_MEDIA_PREVIOUS);
-                            v.getContext().sendBroadcast(intent);
+                            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                                Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
+                                intent.putExtra("action", KEYCODE_MEDIA_PREVIOUS);
+                                v.getContext().sendBroadcast(intent);
+                            }
                             return false;
                         }
                     });
                     musicViewHolder.musicStatus.setOnTouchListener(new OnTouchListener() {
                         @Override
                         public boolean onTouch(View v, MotionEvent event) {
-                            Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
-                            intent.putExtra("action", KEYCODE_MEDIA_PLAY_PAUSE);
-                            v.getContext().sendBroadcast(intent);
+                            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                                Intent intent = new Intent(PcConst.NORMAL_PC_MEDIA_KEY);
+                                intent.putExtra("action", KEYCODE_MEDIA_PLAY_PAUSE);
+                                v.getContext().sendBroadcast(intent);
 
-                            if (isMusicPlay) {
-                                musicViewHolder.musicStatus.setImageResource(R.mipmap.play);
-                            } else {
-                                musicViewHolder.musicStatus.setImageResource(R.mipmap.pause);
+                                if (isMusicPlay) {
+                                    musicViewHolder.musicStatus.setImageResource(R.mipmap.play);
+                                } else {
+                                    musicViewHolder.musicStatus.setImageResource(R.mipmap.pause);
 
+                                }
                             }
+
                             return false;
                         }
                     });
@@ -380,8 +387,10 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 itemView.findViewById(R.id.map_search).setOnTouchListener(new OnTouchListener() {
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
-                        openFreeformApp(TYPE_MAP);
-                        navTo();
+                        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                            openFreeformApp(TYPE_MAP);
+                            navTo();
+                        }
                         return false;
                     }
                 });
@@ -389,8 +398,10 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 itemView.findViewById(R.id.map_home).setOnTouchListener(new OnTouchListener() {
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
-                        openFreeformApp(TYPE_MAP);
-                        navToSpecialAddress(1);
+                        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                            openFreeformApp(TYPE_MAP);
+                            navToSpecialAddress(1);
+                        }
                         return false;
                     }
                 });
@@ -398,8 +409,10 @@ public class MinusScreenViewRoot extends ConstraintLayout {
                 itemView.findViewById(R.id.map_company).setOnTouchListener(new OnTouchListener() {
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
-                        openFreeformApp(TYPE_MAP);
-                        navToSpecialAddress(2);
+                        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                            openFreeformApp(TYPE_MAP);
+                            navToSpecialAddress(2);
+                        }
                         return false;
                     }
                 });
