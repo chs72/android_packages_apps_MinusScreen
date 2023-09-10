@@ -1,4 +1,6 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
         app:summary="@string/freeformAppSummary"
@@ -41,4 +43,4 @@
 
 <!--    </PreferenceCategory>-->
 
-</PreferenceScreen>
+</androidx.preference.PreferenceScreen>
