@@ -14,4 +14,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "minusscreen"
-include ':app'
+include(":app")
