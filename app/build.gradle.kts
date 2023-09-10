@@ -41,12 +41,10 @@ android {
         releaseSigning.storePassword(keystoreProperties["storePassword"] as String)
     }
 
-    println("Version Name: $releaseSigning")
-
     buildTypes {
         release {
-            isMinifyEnabled = false
-            setProperty("archivesBaseName", "minusscreen.apk")
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -63,21 +61,16 @@ android {
         }
     }
 
-//    android.applicationVariants.all { variant ->
-////        if (variant.buildType.name == "release") {
-//////            variant.outputs.all {
-//////                outputFileName = "minusscreen.apk"
-//////            }
-////        }
-//        if (variant.buildType.name == "release") {
-//            variant.outputs.all { outItem ->
-//
-//
-//                outItem.equals("")
-//            }
-//        }
-//        variant.buildType.name == "release"
-//    }
+    android.applicationVariants.all {
+        val buildType = this.buildType.name
+        if (buildType.equals("release")) {
+            outputs.all {
+                if (this is com.android.build.gradle.internal.api.ApkVariantOutputImpl) {
+                    this.outputFileName = "minusscreen.apk"
+                }
+            }
+        }
+    }
 }
 
 dependencies {
