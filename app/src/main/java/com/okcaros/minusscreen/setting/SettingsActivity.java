@@ -16,6 +16,7 @@ import androidx.preference.PreferenceFragmentCompat;
 import com.okcaros.minusscreen.R;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class SettingsActivity extends AppCompatActivity {
@@ -91,12 +92,24 @@ public class SettingsActivity extends AppCompatActivity {
             packageNames.clear();
             for (ApplicationInfo appInfo : installedAppList) {
                 // 过滤系统应用
-                if ((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
+                if (((appInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) | containsString(appInfo.packageName)) {
                     appNames.add(appInfo.loadLabel(packageManager));
                     packageNames.add(appInfo.packageName);
                 }
             }
         }
+    }
+
+    public static boolean containsString(String target) {
+        String[] systemAppWhiteListArray = {
+                "com.android.deskclock",
+                "com.google.android.apps.maps",
+                "com.android.calendar",
+                "com.google.android.youtube"
+        };
+
+        List<String> list = Arrays.asList(systemAppWhiteListArray);
+        return list.contains(target);
     }
 
     @Override
