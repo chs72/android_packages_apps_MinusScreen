@@ -190,6 +190,8 @@ public class MinusScreenService extends Service {
                         } catch (RemoteException e) {
                             // do nothing
                         }
+
+                        updateViewWithAnim(0, 0, 1, 1);
                         break;
                     }
 
