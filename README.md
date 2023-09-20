@@ -1,40 +1,27 @@
-# Android 负一屏
 
-![负一屏示例](screenshots/screenshot.png)
 
-Android 负一屏是一个用于自定义 Android 设备主屏幕的应用程序。它允许用户创建自己的主屏幕布局，添加小部件、快捷方式和自定义壁纸，以满足他们的个人需求和喜好。
+# Android minus screen
+OKCAR Minus Screen is an application designed for Android devices. It allows users to personalize their minus screen by adding shortcuts to apps, catering to their individual needs and preferences.
 
-## 功能特点
+## Features
+![Screenshots](screenshots/MinusscreenCN.png)
 
-- **自定义布局**：轻松调整主屏幕的布局，包括图标和小部件的位置。
-- **快捷方式管理**：添加、删除或编辑主屏幕上的应用程序快捷方式。
-- **小部件支持**：支持各种小部件，包括时钟、天气、日历等。
-- **自定义壁纸**：更改主屏幕的背景壁纸，以适应您的风格。
-- **主题支持**：选择不同的主题来个性化您的负一屏体验。
+## Technical Implementation
+The technical implementation is based on Google's feed screen solution, utilizing the ILauncherOverlay and ILauncherOverlayCallback interfaces. The Launcher as the client side, and OKCAR Minus Screen serves as an independent application on the server side. Communication is achieved through AIDL, enabling the initialization of the minus screen and the move between the minus screen and the desktop.
 
-## 安装
-
-1. 下载最新的发行版 APK 文件：[链接到发布页](https://github.com/yourusername/yourproject/releases)
-2. 在 Android 设备上启用 "未知来源" 选项：前往设置 > 安全性 > 未知来源。
-3. 安装下载的 APK 文件。
-
-## 使用说明
-
-1. 打开 Android 负一屏应用。
-2. 在应用内进行布局和设置的自定义。
-3. 长按主屏幕上的元素以进行编辑或删除操作。
-4. 享受您的自定义 Android 负一屏体验！
-
-## 贡献
-
-如果您希望贡献代码、报告问题或提出建议，欢迎参与该项目。请查看[贡献指南](CONTRIBUTING.md)以获取更多信息。
-
-## 许可证
-
-此项目基于 MIT 许可证。有关详细信息，请查看 [LICENSE](LICENSE) 文件。
+## License
+[GNU GPLv3](LICENSE)
 
 ---
 
-**注意**：Android 负一屏是一个开源项目，不提供任何形式的官方支持。请仔细阅读文档和许可证，了解项目的使用和分发规则。
+# Android minus screen
+OKCAR负一屏是一个用于自定义 Android 设备主屏幕的应用程序。它允许用户自定义自己的负一屏，添加快捷方式，以满足用户的个人需求和喜好。
 
-![负一屏截图](screenshots/screenshot.png)
+## 功能特点
+![Screenshots](screenshots/MinusscreenCN.png)
+
+## 技术实现
+技术原理是采用了Google的feed屏方案，基于ILauncherOverlay和ILauncherOverlayCallback这两个接口来实现，桌面作为客户端，OKCAR负一屏是一个独立应用作为服务端，通过AIDL做通信，来实现负一屏的加载以及负一屏和桌面之间的相互滑动。
+
+## 许可证
+[GNU GPLv3](LICENSE)
